@@ -139,7 +139,18 @@ export class Router {
         response.headers = rawResponse.headers;
         response.type = rawResponse.type;
 
-        let completionResp: CompletionResponse | undefined;
+        const outputResult = (completionResp: CompletionResponse) => {
+            // If the usage is not available, it means the response is still not finished, skip the logging in this case
+            if (!completionResp || !completionResp.usage) {
+                return;
+            }
+            console.info(
+                `Finished routing ${completionResp.id}: ${model} -> ${targetModel}@@${providerId} ~ ${latency}ms`,
+            );
+            console.info(
+                `ID ${completionResp.id} consumed ${completionResp.usage.total_tokens} tokens = ${completionResp.usage.prompt_tokens} prompt tokens + ${completionResp.usage.completion_tokens} completion tokens`,
+            );
+        };
         if (stream) {
             if (!rawResponse.body) {
                 throw new Error("Stream response body is empty");
@@ -155,16 +166,18 @@ export class Router {
                         return;
                     }
                     try {
-                        completionResp = JSON.parse(
+                        const completionResp = JSON.parse(
                             trimmedData,
                         ) as CompletionResponse;
+                        outputResult(completionResp);
                     } catch {
                         // Ignore the error since the SSE event data is not always a valid JSON object
                     }
                 },
             });
             const reader = middlewareStream.getReader();
-            await reader.read().then(
+            // Asynchronously read the response stream without calling await here
+            reader.read().then(
                 function chunkReader({ done, value }): Promise<void> {
                     if (done) {
                         return Promise.resolve();
@@ -178,17 +191,7 @@ export class Router {
             response.body = responseStream;
         } else {
             response.body = await rawResponse.json();
-            completionResp = response.body as CompletionResponse;
-        }
-        if (completionResp) {
-            console.info(
-                `Finished routing ${completionResp.id}: ${model} -> ${targetModel}@@${providerId} ~ ${latency}ms`,
-            );
-            if (completionResp.usage) {
-                console.info(
-                    `ID ${completionResp.id} consumed ${completionResp.usage.total_tokens} tokens = ${completionResp.usage.prompt_tokens} prompt tokens + ${completionResp.usage.completion_tokens} completion tokens`,
-                );
-            }
+            outputResult(response.body as CompletionResponse);
         }
 
         return response;
