@@ -1,8 +1,8 @@
 import { bold, yellow } from "@std/fmt/colors";
 
 import { Application } from "@oak/oak/application";
-import { Router } from "@oak/oak/router";
 import { Context } from "@oak/oak/context";
+import { Router } from "@oak/oak/router";
 
 import { getConfig, getRouter, setConfig } from "@/global.ts";
 import { buildConfig, Config } from "@/types/config.ts";

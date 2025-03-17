@@ -2,6 +2,7 @@ import { Request } from "@oak/oak/request";
 import { Response } from "@oak/oak/response";
 import { createParser } from "eventsource-parser";
 
+import { CompletionResponse } from "@/types/completaion.ts";
 import {
     Config,
     hashConfig,
@@ -10,7 +11,6 @@ import {
     Provider,
     Rule,
 } from "@/types/config.ts";
-import { CompletionResponse } from "@/types/completaion.ts";
 
 export const RANDOM_PROVIDER_CHANCE = 0.2;
 const HTTP_REFERER_HEADER = "HTTP-Referer";
