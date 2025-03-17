@@ -14,6 +14,8 @@
     "jsr:@std/path@1": "1.0.8",
     "jsr:@std/yaml@^1.0.5": "1.0.5",
     "npm:@deno/kv@0.10": "0.10.0",
+    "npm:eventsource-parser@3": "3.0.0",
+    "npm:hash-wasm@^4.12.0": "4.12.0",
     "npm:path-to-regexp@^6.3.0": "6.3.0"
   },
   "jsr": {
@@ -93,6 +95,12 @@
         "@deno/kv-win32-x64-msvc"
       ]
     },
+    "eventsource-parser@3.0.0": {
+      "integrity": "sha512-T1C0XCUimhxVQzW4zFipdx0SficT651NnkR0ZSH3yQwh+mFMdLfgjABVi4YtMTtaL4s168593DaoaRLMqryavA=="
+    },
+    "hash-wasm@4.12.0": {
+      "integrity": "sha512-+/2B2rYLb48I/evdOIhP+K/DD2ca2fgBjp6O+GBEnCDk2e4rpeXIK8GvIyRPjTezgmWn9gmKwkQjjx6BtqDHVQ=="
+    },
     "path-to-regexp@6.3.0": {
       "integrity": "sha512-Yhpw4T9C6hPpgPeA28us07OJeqZ5EzQTkbfwuhsUg0c237RomFoETJgmp2sa3F/41gfLE6G5cqcYwznmeEeOlQ=="
     }
@@ -104,7 +112,9 @@
       "jsr:@std/fmt@^1.0.6",
       "jsr:@std/media-types@^1.1.0",
       "jsr:@std/yaml@^1.0.5",
-      "npm:@deno/kv@0.10"
+      "npm:@deno/kv@0.10",
+      "npm:eventsource-parser@3",
+      "npm:hash-wasm@^4.12.0"
     ]
   }
 }

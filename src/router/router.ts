@@ -1,7 +1,15 @@
 import { Request } from "@oak/oak/request";
 import { Response } from "@oak/oak/response";
+import { createParser } from "eventsource-parser";
 
-import { Config, Identifier, Model, Provider, Rule } from "@/types/config.ts";
+import {
+    Config,
+    hashConfig,
+    Identifier,
+    Model,
+    Provider,
+    Rule,
+} from "@/types/config.ts";
 import { CompletionResponse } from "@/types/completaion.ts";
 
 export const RANDOM_PROVIDER_CHANCE = 0.2;
@@ -15,11 +23,13 @@ const X_TITLE_HEADER_VALUE = "one-united";
  * based on the model and the rules defined in the config.
  */
 export class Router {
+    private config: Config;
     private providers: Map<Identifier, Provider>;
     private rules: Map<Model, Rule>;
     private latency: Map<string, number>; // Key: model@@provider
 
     constructor(config: Config) {
+        this.config = config;
         this.providers = new Map();
         this.rules = new Map();
         this.latency = new Map();
@@ -123,28 +133,60 @@ export class Router {
         const latency = performance.now() - startTime;
         this.updateLatency(targetModel, providerId, latency);
 
-        console.info(
-            `Finished routing ${model} -> ${targetModel}@@${providerId} in ${latency}ms`,
-        );
-
         // Build the response object
         const response = new Response(request);
         response.status = rawResponse.status;
         response.headers = rawResponse.headers;
         response.type = rawResponse.type;
 
+        let completionResp: CompletionResponse | undefined;
         if (stream) {
             if (!rawResponse.body) {
                 throw new Error("Stream response body is empty");
             }
-            response.body = rawResponse.body;
+            const bodyStream = rawResponse.body;
+            // Tee the response stream to retrieve data from the SSE
+            const [responseStream, middlewareStream] = bodyStream.tee();
+            // Read and parse the data from the SSE stream
+            const parser = createParser({
+                onEvent: (event) => {
+                    const trimmedData = event.data.trim();
+                    if (trimmedData === "[DONE]") {
+                        return;
+                    }
+                    try {
+                        completionResp = JSON.parse(
+                            trimmedData,
+                        ) as CompletionResponse;
+                    } catch {
+                        // Ignore the error since the SSE event data is not always a valid JSON object
+                    }
+                },
+            });
+            const reader = middlewareStream.getReader();
+            await reader.read().then(
+                function chunkReader({ done, value }): Promise<void> {
+                    if (done) {
+                        return Promise.resolve();
+                    }
+                    const chunk = new TextDecoder().decode(value);
+                    parser.feed(chunk);
+                    return reader.read().then(chunkReader);
+                },
+            );
+
+            response.body = responseStream;
         } else {
             response.body = await rawResponse.json();
-            // TODO: Support retrieve token usage info from the stream response
-            const completionResp = response.body as CompletionResponse;
-            if (completionResp && completionResp.usage) {
+            completionResp = response.body as CompletionResponse;
+        }
+        if (completionResp) {
+            console.info(
+                `Finished routing ${completionResp.id}: ${model} -> ${targetModel}@@${providerId} ~ ${latency}ms`,
+            );
+            if (completionResp.usage) {
                 console.info(
-                    `id ${completionResp.id} consumed ${completionResp.usage.total_tokens} tokens = ${completionResp.usage.prompt_tokens} prompt tokens + ${completionResp.usage.completion_tokens} completion tokens`,
+                    `ID ${completionResp.id} consumed ${completionResp.usage.total_tokens} tokens = ${completionResp.usage.prompt_tokens} prompt tokens + ${completionResp.usage.completion_tokens} completion tokens`,
                 );
             }
         }
@@ -227,5 +269,21 @@ export class Router {
      */
     updateLatency(model: Model, provider: Identifier, latency: number) {
         this.latency.set(`${model}@@${provider}`, latency);
+    }
+
+    public async getStats(): Promise<{
+        hash: string;
+        latency: Record<string, number>;
+    }> {
+        // Sort by the latency value
+        const sortedLatency = new Map(
+            [...this.latency.entries()].sort(([, latency1], [, latency2]) => {
+                return latency1 - latency2;
+            }),
+        );
+        return {
+            hash: await hashConfig(this.config),
+            latency: Object.fromEntries(sortedLatency.entries()),
+        };
     }
 }

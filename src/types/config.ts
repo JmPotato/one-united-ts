@@ -1,5 +1,7 @@
 import { parse } from "@std/yaml";
 
+import { blake3 } from "hash-wasm";
+
 const DEFAULT_COMPLETION_PATH = "/v1/chat/completions";
 
 export type Model = string;
@@ -86,4 +88,8 @@ export function buildConfig(yamlContent: string): Config {
         }
         throw new Error("Failed to parse config: Unknown error");
     }
+}
+
+export async function hashConfig(config: Config): Promise<string> {
+    return await blake3(JSON.stringify(config));
 }

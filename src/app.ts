@@ -5,11 +5,14 @@ import { Router } from "@oak/oak/router";
 import { Context } from "@oak/oak/context";
 
 import { getConfig, getRouter, setConfig } from "@/global.ts";
-import { buildConfig } from "@/types/config.ts";
+import { buildConfig, Config } from "@/types/config.ts";
 
 const PORT = 5299;
 const ONE_API_KEY = Deno.env.get("ONE_API_KEY");
+
+// Endpoint paths
 const CONFIG_PATH = "/config";
+const STATS_PATH = "/stats";
 const MODELS_PATH = "/v1/models";
 const COMPLETIONS_PATH = "/v1/chat/completions";
 
@@ -41,17 +44,37 @@ oakRouter.post(CONFIG_PATH, async (ctx: Context) => {
     try {
         // Retrieve the config from the request body according to the CONTENT-TYPE header
         const contentType = ctx.request.headers.get("content-type");
+        let config: Config;
         if (contentType === "application/json") {
+            config = await ctx.request.body.json();
+        } else if (contentType === "application/yaml") {
+            config = buildConfig(await ctx.request.body.text());
+        } else {
             ctx.response.status = 415;
             ctx.response.body = { error: "Unsupported media type" };
             return;
-        } else if (contentType === "application/yaml") {
-            const config = buildConfig(await ctx.request.body.text());
-            await setConfig(KV, config);
-            ctx.response.body = {
-                message: "Configuration updated successfully",
-            };
         }
+        // Update the config in the KV database
+        await setConfig(KV, config);
+        ctx.response.body = {
+            message: "Configuration updated successfully",
+        };
+    } catch (error: unknown) {
+        ctx.response.status = 500;
+        ctx.response.body = {
+            error: error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+        };
+    }
+});
+
+// Stats endpoint
+oakRouter.get(STATS_PATH, async (ctx: Context) => {
+    try {
+        const router = await getRouter();
+        const stats = await router.getStats();
+        ctx.response.body = stats;
     } catch (error: unknown) {
         ctx.response.status = 500;
         ctx.response.body = {
