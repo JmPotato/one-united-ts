@@ -10,6 +10,7 @@ import { buildConfig } from "@/types/config.ts";
 const PORT = 5299;
 const ONE_API_KEY = Deno.env.get("ONE_API_KEY");
 const CONFIG_PATH = "/config";
+const MODELS_PATH = "/v1/models";
 const COMPLETIONS_PATH = "/v1/chat/completions";
 
 // Initialize KV database
@@ -51,6 +52,38 @@ oakRouter.post(CONFIG_PATH, async (ctx: Context) => {
                 message: "Configuration updated successfully",
             };
         }
+    } catch (error: unknown) {
+        ctx.response.status = 500;
+        ctx.response.body = {
+            error: error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+        };
+    }
+});
+
+// Models endpoint
+oakRouter.get(MODELS_PATH, async (ctx: Context) => {
+    try {
+        const config = await getConfig(KV);
+        if (!config) {
+            ctx.response.status = 404;
+            ctx.response.body = { error: "Configuration not found" };
+            return;
+        }
+
+        // Get models from rules
+        const models = config.rules.map((rule) => rule.model);
+
+        // Format response according to OpenAI API spec
+        // @see https://platform.openai.com/docs/api-reference/models/list
+        ctx.response.body = {
+            object: "list",
+            data: models.map((model) => ({
+                id: model,
+                object: "model",
+            })),
+        };
     } catch (error: unknown) {
         ctx.response.status = 500;
         ctx.response.body = {
