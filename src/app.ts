@@ -1,0 +1,106 @@
+import { bold, yellow } from "@std/fmt/colors";
+
+import { Application } from "@oak/oak/application";
+import { Router } from "@oak/oak/router";
+import { Context } from "@oak/oak/context";
+
+import { getConfig, getRouter, setConfig } from "@/global.ts";
+import { buildConfig } from "@/types/config.ts";
+
+const PORT = 5299;
+const ONE_API_KEY = Deno.env.get("ONE_API_KEY");
+const CONFIG_PATH = "/config";
+const COMPLETIONS_PATH = "/v1/chat/completions";
+
+// Initialize KV database
+const KV = await Deno.openKv();
+const oakRouter = new Router();
+
+// Config endpoints
+oakRouter.get(CONFIG_PATH, async (ctx: Context) => {
+    try {
+        const config = await getConfig(KV);
+        if (!config) {
+            ctx.response.status = 404;
+            ctx.response.body = { error: "Configuration not found" };
+            return;
+        }
+        ctx.response.body = config;
+    } catch (error: unknown) {
+        ctx.response.status = 500;
+        ctx.response.body = {
+            error: error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+        };
+    }
+});
+
+oakRouter.post(CONFIG_PATH, async (ctx: Context) => {
+    try {
+        // Retrieve the config from the request body according to the CONTENT-TYPE header
+        const contentType = ctx.request.headers.get("content-type");
+        if (contentType === "application/json") {
+            ctx.response.status = 415;
+            ctx.response.body = { error: "Unsupported media type" };
+            return;
+        } else if (contentType === "application/yaml") {
+            const config = buildConfig(await ctx.request.body.text());
+            await setConfig(KV, config);
+            ctx.response.body = {
+                message: "Configuration updated successfully",
+            };
+        }
+    } catch (error: unknown) {
+        ctx.response.status = 500;
+        ctx.response.body = {
+            error: error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+        };
+    }
+});
+
+// Completions endpoint
+oakRouter.post(COMPLETIONS_PATH, async (ctx: Context) => {
+    try {
+        const router = await getRouter();
+        ctx.response = await router.route(ctx.request);
+    } catch (error: unknown) {
+        ctx.response.status = 500;
+        ctx.response.body = {
+            error: error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+        };
+    }
+});
+
+const app = new Application();
+
+// Add a middleware to check if the API key is valid
+app.use(async (ctx, next) => {
+    const apiKey = ctx.request.headers.get("Authorization");
+    if (ONE_API_KEY && apiKey !== `Bearer ${ONE_API_KEY}`) {
+        ctx.response.status = 401;
+        ctx.response.body = {
+            error: "Unauthorized or invalid ONE_API_KEY in the header",
+        };
+        return;
+    }
+    await next();
+});
+app.use(oakRouter.routes());
+app.use(oakRouter.allowedMethods());
+
+// Log when we start listening for requests
+app.addEventListener("listen", ({ hostname, port, serverType }) => {
+    console.log(
+        `${bold("Start listening on ")}${yellow(`${hostname}:${port}`)} ${
+            bold("using HTTP server:")
+        } ${yellow(serverType)}`,
+    );
+});
+
+// Start listening to requests
+await app.listen({ hostname: "127.0.0.1", port: PORT });
