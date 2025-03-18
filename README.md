@@ -1,5 +1,8 @@
 # one-united-ts
 
+[![GitHub License](https://img.shields.io/github/license/JmPotato/one-united-ts)](https://github.com/JmPotato/one-united-ts/blob/main/LICENSE)
+[![Deno Test](https://github.com/JmPotato/one-united-ts/actions/workflows/deno-test.yml/badge.svg)](https://github.com/JmPotato/one-united-ts/actions/workflows/deno-test.yml)
+
 A TypeScript implementation of [one-united](https://github.com/JmPotato/one-united), providing a robust API gateway for Large Language Models (LLMs). This version enhances the original Rust implementation with improved deployment capabilities while maintaining core functionality.
 
 ## ✨ Key Features
