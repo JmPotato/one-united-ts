@@ -159,4 +159,4 @@ app.addEventListener("listen", ({ hostname, port, serverType }) => {
 });
 
 // Start listening to requests
-await app.listen({ hostname: "127.0.0.1", port: PORT });
+await app.listen({ hostname: "0.0.0.0", port: PORT });

@@ -1,6 +1,6 @@
 {
     "tasks": {
-        "dev": "deno run --watch --allow-net --allow-env --allow-read --unstable-kv src/app.ts"
+        "dev": "deno run --watch --allow-net --allow-env --unstable-kv src/app.ts"
     },
     "imports": {
         "@/": "./src/",
