@@ -1,4 +1,5 @@
 import { bold, yellow } from "@std/fmt/colors";
+import { stringify } from "@std/yaml";
 
 import { Application } from "@oak/oak/application";
 import { Context } from "@oak/oak/context";
@@ -29,7 +30,19 @@ oakRouter.get(CONFIG_PATH, async (ctx: Context) => {
             ctx.response.body = { error: "Configuration not found" };
             return;
         }
-        ctx.response.body = config;
+
+        // Get the Accept header and determine the response format
+        const accept = ctx.request.headers.get("Accept") || "application/json";
+        if (accept.includes("application/yaml")) {
+            // Convert config to YAML
+            const yaml = stringify(config);
+            ctx.response.headers.set("Content-Type", "application/yaml");
+            ctx.response.body = yaml;
+        } else {
+            // Default to JSON
+            ctx.response.headers.set("Content-Type", "application/json");
+            ctx.response.body = config;
+        }
     } catch (error: unknown) {
         ctx.response.status = 500;
         ctx.response.body = {
