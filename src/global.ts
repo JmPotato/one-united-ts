@@ -3,8 +3,18 @@ import { Config, hashConfig } from "@/types/config.ts";
 
 const CONFIG_KEY = "config";
 
-const KV = await Deno.openKv();
+const KV = await openKv();
 let llmRouter: Router | null = null;
+
+export async function openKv(): Promise<Deno.Kv> {
+    const isDenoDeploy = Boolean(Deno.env.get("DENO_DEPLOYMENT_ID"));
+
+    if (isDenoDeploy) {
+        return await Deno.openKv();
+    }
+
+    return await Deno.openKv("kv.db");
+}
 
 export async function getConfig(kv: Deno.Kv): Promise<Config | null> {
     const result = await kv.get<Config>([CONFIG_KEY]);

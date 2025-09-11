@@ -137,3 +137,8 @@ dist
 
 # Others
 .DS_Store
+
+# KV
+kv.db
+kv.db-shm
+kv.db-wal

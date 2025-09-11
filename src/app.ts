@@ -4,11 +4,11 @@ import { stringify } from "@std/yaml";
 import { Application } from "@oak/oak/application";
 import { Context } from "@oak/oak/context";
 import { Router } from "@oak/oak/router";
+import { Command } from "@cliffy/command";
 
-import { getConfig, getRouter, setConfig } from "@/global.ts";
+import { getConfig, getRouter, openKv, setConfig } from "@/global.ts";
 import { buildConfig, Config } from "@/types/config.ts";
 
-const PORT = 5299;
 const ONE_API_KEY = Deno.env.get("ONE_API_KEY");
 
 // Endpoint paths
@@ -18,7 +18,7 @@ const MODELS_PATH = "/v1/models";
 const COMPLETIONS_PATH = "/v1/chat/completions";
 
 // Initialize KV database
-const KV = await Deno.openKv();
+const KV = await openKv();
 const oakRouter = new Router();
 
 // Config endpoints
@@ -172,4 +172,20 @@ app.addEventListener("listen", ({ hostname, port, serverType }) => {
 });
 
 // Start listening to requests
-await app.listen({ hostname: "0.0.0.0", port: PORT });
+const { hostname, port } = await new Command()
+    .name("one-united")
+    .version("0.1.0")
+    .description(
+        "A lightweight API gateway for LLMs, designed to simplify interactions with multiple LLM providers by exposing an one-united OpenAI-compatible endpoint.",
+    )
+    .option("-H, --hostname <hostname:string>", "Server hostname", {
+        default: "127.0.0.1",
+    })
+    .option("-p, --port <port:number>", "Server port", { default: 5299 })
+    .parse(Deno.args)
+    .then((result: { options: { hostname: string; port: number } }) => ({
+        hostname: result.options.hostname,
+        port: result.options.port,
+    }));
+
+await app.listen({ hostname, port });
