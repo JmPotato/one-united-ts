@@ -77,7 +77,15 @@ export interface CompletionStreamOptions {
 }
 
 export interface CompletionAudioParams {
-    voice: "alloy" | "ash" | "ballad" | "coral" | "echo" | "sage" | "shimmer" | "verse";
+    voice:
+        | "alloy"
+        | "ash"
+        | "ballad"
+        | "coral"
+        | "echo"
+        | "sage"
+        | "shimmer"
+        | "verse";
     format?: "wav" | "mp3" | "flac" | "opus" | "pcm16";
 }
 
@@ -117,7 +125,10 @@ export interface CompletionRequest {
     logprobs?: boolean;
     top_logprobs?: number;
     tools?: CompletionTool[];
-    tool_choice?: "none" | "auto" | "required" | { type: "function"; function: { name: string } };
+    tool_choice?: "none" | "auto" | "required" | {
+        type: "function";
+        function: { name: string };
+    };
     parallel_tool_calls?: boolean;
     response_format?: CompletionResponseFormat;
     modalities?: ("text" | "audio")[];
@@ -152,7 +163,13 @@ export interface CompletionRequest {
 export interface CompletionChoice {
     index: number;
     message: CompletionMessage;
-    finish_reason: "stop" | "length" | "tool_calls" | "content_filter" | "function_call" | null;
+    finish_reason:
+        | "stop"
+        | "length"
+        | "tool_calls"
+        | "content_filter"
+        | "function_call"
+        | null;
     logprobs?: {
         content?: Array<{
             token: string;
@@ -223,7 +240,13 @@ export interface CompletionChunkDelta {
 export interface CompletionChunkChoice {
     index: number;
     delta: CompletionChunkDelta;
-    finish_reason: "stop" | "length" | "tool_calls" | "content_filter" | "function_call" | null;
+    finish_reason:
+        | "stop"
+        | "length"
+        | "tool_calls"
+        | "content_filter"
+        | "function_call"
+        | null;
     logprobs?: {
         content?: Array<{
             token: string;

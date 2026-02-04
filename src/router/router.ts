@@ -4,7 +4,14 @@ import { createParser } from "eventsource-parser";
 
 import { CompletionChunk, CompletionResponse } from "@/types/completaion.ts";
 import { ResponsesResponse, ResponsesStreamEvent } from "@/types/responses.ts";
-import { Config, hashConfig, Identifier, Model, Provider, Rule } from "@/types/config.ts";
+import {
+    Config,
+    hashConfig,
+    Identifier,
+    Model,
+    Provider,
+    Rule,
+} from "@/types/config.ts";
 
 export const RANDOM_PROVIDER_CHANCE = 0.2;
 
@@ -17,7 +24,10 @@ const MAX_CONTENT_PREVIEW_LENGTH = 50;
 const SENSITIVE_DATA_PLACEHOLDER = "[REDACTED]";
 const DEFAULT_RESPONSES_PATH = "/v1/responses";
 
-function truncateString(str: string | null | undefined, maxLength: number = MAX_CONTENT_PREVIEW_LENGTH): string {
+function truncateString(
+    str: string | null | undefined,
+    maxLength: number = MAX_CONTENT_PREVIEW_LENGTH,
+): string {
     if (!str) return "";
     if (str.length <= maxLength) return str;
     return str.slice(0, maxLength) + "...";
@@ -25,16 +35,22 @@ function truncateString(str: string | null | undefined, maxLength: number = MAX_
 
 function redactBase64Data(data: string | null | undefined): string {
     if (!data) return "";
-    const looksLikeBase64 = data.length > 100 && /^[A-Za-z0-9+/=]+$/.test(data.slice(0, 100));
+    const looksLikeBase64 = data.length > 100 &&
+        /^[A-Za-z0-9+/=]+$/.test(data.slice(0, 100));
     return looksLikeBase64 ? SENSITIVE_DATA_PLACEHOLDER : truncateString(data);
 }
 
 // deno-lint-ignore no-explicit-any
 function migrateDeprecatedFields(body: any): void {
-    if (body.max_tokens !== undefined && body.max_completion_tokens === undefined) {
+    if (
+        body.max_tokens !== undefined &&
+        body.max_completion_tokens === undefined
+    ) {
         body.max_completion_tokens = body.max_tokens;
         delete body.max_tokens;
-        console.info("Migrated deprecated field: max_tokens -> max_completion_tokens");
+        console.info(
+            "Migrated deprecated field: max_tokens -> max_completion_tokens",
+        );
     }
 
     if (body.user !== undefined) {
@@ -45,13 +61,21 @@ function migrateDeprecatedFields(body: any): void {
             body.prompt_cache_key = body.user;
         }
         delete body.user;
-        console.info("Migrated deprecated field: user -> safety_identifier, prompt_cache_key");
+        console.info(
+            "Migrated deprecated field: user -> safety_identifier, prompt_cache_key",
+        );
     }
 
     if (body.functions !== undefined && body.tools === undefined) {
-        body.tools = body.functions.map((fn: { name: string; description?: string; parameters?: object }) => ({
+        body.tools = body.functions.map((
+            fn: { name: string; description?: string; parameters?: object },
+        ) => ({
             type: "function",
-            function: { name: fn.name, description: fn.description, parameters: fn.parameters },
+            function: {
+                name: fn.name,
+                description: fn.description,
+                parameters: fn.parameters,
+            },
         }));
         delete body.functions;
         console.info("Migrated deprecated field: functions -> tools");
@@ -60,8 +84,13 @@ function migrateDeprecatedFields(body: any): void {
     if (body.function_call !== undefined && body.tool_choice === undefined) {
         if (body.function_call === "none" || body.function_call === "auto") {
             body.tool_choice = body.function_call;
-        } else if (typeof body.function_call === "object" && body.function_call.name) {
-            body.tool_choice = { type: "function", function: { name: body.function_call.name } };
+        } else if (
+            typeof body.function_call === "object" && body.function_call.name
+        ) {
+            body.tool_choice = {
+                type: "function",
+                function: { name: body.function_call.name },
+            };
         }
         delete body.function_call;
         console.info("Migrated deprecated field: function_call -> tool_choice");
@@ -78,7 +107,9 @@ interface RouteContext {
 
 function logRouteCompletion(ctx: RouteContext): void {
     console.info(
-        `Finished routing ${ctx.requestId}: ${ctx.sourceModel} -> ${ctx.targetModel}@@${ctx.providerId} ~ ${ctx.latencyMs.toFixed(0)}ms`,
+        `Finished routing ${ctx.requestId}: ${ctx.sourceModel} -> ${ctx.targetModel}@@${ctx.providerId} ~ ${
+            ctx.latencyMs.toFixed(0)
+        }ms`,
     );
 }
 
@@ -96,19 +127,26 @@ type UsageInfo = {
 
 function formatTokenDetails(usage: UsageInfo): string {
     const isCompletionApi = "prompt_tokens" in usage;
-    const inputTokens = isCompletionApi ? usage.prompt_tokens : usage.input_tokens;
-    const outputTokens = isCompletionApi ? usage.completion_tokens : usage.output_tokens;
+    const inputTokens = isCompletionApi
+        ? usage.prompt_tokens
+        : usage.input_tokens;
+    const outputTokens = isCompletionApi
+        ? usage.completion_tokens
+        : usage.output_tokens;
     const inputLabel = isCompletionApi ? "prompt" : "input";
     const outputLabel = isCompletionApi ? "completion" : "output";
 
-    let details = `${usage.total_tokens} tokens = ${inputTokens} ${inputLabel} + ${outputTokens} ${outputLabel}`;
+    let details =
+        `${usage.total_tokens} tokens = ${inputTokens} ${inputLabel} + ${outputTokens} ${outputLabel}`;
 
-    const cachedTokens = usage.prompt_tokens_details?.cached_tokens ?? usage.input_tokens_details?.cached_tokens;
+    const cachedTokens = usage.prompt_tokens_details?.cached_tokens ??
+        usage.input_tokens_details?.cached_tokens;
     if (cachedTokens) {
         details += ` (${cachedTokens} cached)`;
     }
 
-    const reasoningTokens = usage.completion_tokens_details?.reasoning_tokens ?? usage.output_tokens_details?.reasoning_tokens;
+    const reasoningTokens = usage.completion_tokens_details?.reasoning_tokens ??
+        usage.output_tokens_details?.reasoning_tokens;
     if (reasoningTokens) {
         details += ` (${reasoningTokens} reasoning)`;
     }
@@ -116,7 +154,11 @@ function formatTokenDetails(usage: UsageInfo): string {
     return details;
 }
 
-function logCompletionResult(resp: CompletionResponse | CompletionChunk, ctx: RouteContext, isStream: boolean): void {
+function logCompletionResult(
+    resp: CompletionResponse | CompletionChunk,
+    ctx: RouteContext,
+    isStream: boolean,
+): void {
     if (!resp?.usage) return;
 
     logRouteCompletion(ctx);
@@ -126,23 +168,37 @@ function logCompletionResult(resp: CompletionResponse | CompletionChunk, ctx: Ro
     if (!choice) return;
 
     const finishReason = choice.finish_reason || "unknown";
-    const serviceTier = resp.service_tier ? ` | tier: ${resp.service_tier}` : "";
+    const serviceTier = resp.service_tier
+        ? ` | tier: ${resp.service_tier}`
+        : "";
 
     if (isStream) {
-        console.info(`ID ${resp.id} response: finish=${finishReason}${serviceTier} | content=[streamed]`);
+        console.info(
+            `ID ${resp.id} response: finish=${finishReason}${serviceTier} | content=[streamed]`,
+        );
         return;
     }
 
-    const message = (choice as { message?: CompletionResponse["choices"][0]["message"] }).message;
+    const message =
+        (choice as { message?: CompletionResponse["choices"][0]["message"] })
+            .message;
     const contentPreview = typeof message?.content === "string"
         ? truncateString(message.content)
-        : message?.content ? "[multipart]" : "[empty]";
+        : message?.content
+        ? "[multipart]"
+        : "[empty]";
     const toolCallsInfo = message?.tool_calls?.length
-        ? ` | tool_calls: ${message.tool_calls.map((tc) => tc.function.name).join(", ")}`
+        ? ` | tool_calls: ${
+            message.tool_calls.map((tc) => tc.function.name).join(", ")
+        }`
         : "";
-    const audioInfo = message?.audio ? ` | audio: ${redactBase64Data(message.audio.data)}` : "";
+    const audioInfo = message?.audio
+        ? ` | audio: ${redactBase64Data(message.audio.data)}`
+        : "";
 
-    console.info(`ID ${resp.id} response: finish=${finishReason}${serviceTier} | content="${contentPreview}"${toolCallsInfo}${audioInfo}`);
+    console.info(
+        `ID ${resp.id} response: finish=${finishReason}${serviceTier} | content="${contentPreview}"${toolCallsInfo}${audioInfo}`,
+    );
 }
 
 function logResponsesResult(resp: ResponsesResponse, ctx: RouteContext): void {
@@ -152,12 +208,19 @@ function logResponsesResult(resp: ResponsesResponse, ctx: RouteContext): void {
     console.info(`ID ${resp.id} consumed ${formatTokenDetails(resp.usage)}`);
 
     const status = resp.status || "unknown";
-    const outputTextPreview = resp.output_text ? truncateString(resp.output_text) : "[empty]";
-    const toolCalls = resp.output?.filter((item) => item.type !== "message").map((item) => ("name" in item && item.name) ? item.name : item.type);
-    const toolCallsInfo = toolCalls?.length ? ` | tool_calls: ${toolCalls.join(", ")}` : "";
+    const outputTextPreview = resp.output_text
+        ? truncateString(resp.output_text)
+        : "[empty]";
+    const toolCalls = resp.output?.filter((item) => item.type !== "message")
+        .map((item) => ("name" in item && item.name) ? item.name : item.type);
+    const toolCallsInfo = toolCalls?.length
+        ? ` | tool_calls: ${toolCalls.join(", ")}`
+        : "";
     const errorInfo = resp.error ? ` | error: ${resp.error.code}` : "";
 
-    console.info(`ID ${resp.id} response: status=${status} | output="${outputTextPreview}"${toolCallsInfo}${errorInfo}`);
+    console.info(
+        `ID ${resp.id} response: status=${status} | output="${outputTextPreview}"${toolCallsInfo}${errorInfo}`,
+    );
 }
 
 export class Router {
@@ -180,7 +243,9 @@ export class Router {
         for (const provider of providers) {
             if (this.providers.has(provider.identifier)) {
                 throw new Error(
-                    `Provider ${provider.identifier} are defined multiple times with one: ${this.providers.get(provider.identifier)?.name}`,
+                    `Provider ${provider.identifier} are defined multiple times with one: ${
+                        this.providers.get(provider.identifier)?.name
+                    }`,
                 );
             }
             this.providers.set(provider.identifier, provider);
@@ -190,10 +255,14 @@ export class Router {
     private initializeRules(rules: Rule[]): void {
         for (const rule of rules) {
             if (this.rules.has(rule.model)) {
-                throw new Error(`Rule for model ${rule.model} are defined multiple times`);
+                throw new Error(
+                    `Rule for model ${rule.model} are defined multiple times`,
+                );
             }
             if (rule.providers.length === 0) {
-                throw new Error(`Rule for model ${rule.model} has no providers`);
+                throw new Error(
+                    `Rule for model ${rule.model} has no providers`,
+                );
             }
             this.validateRuleProviders(rule);
             this.rules.set(rule.model, rule);
@@ -204,7 +273,9 @@ export class Router {
         for (const ruleProvider of rule.providers) {
             const provider = this.providers.get(ruleProvider.identifier);
             if (!provider) {
-                throw new Error(`Provider ${ruleProvider.identifier} does not exist in rule of model ${rule.model}`);
+                throw new Error(
+                    `Provider ${ruleProvider.identifier} does not exist in rule of model ${rule.model}`,
+                );
             }
             for (const model of ruleProvider.models) {
                 if (!provider.models.includes(model)) {
@@ -224,7 +295,9 @@ export class Router {
 
         const provider = this.providers.get(providerId);
         if (!provider) {
-            throw new Error(`Provider ${providerId} for target model ${targetModel} not found`);
+            throw new Error(
+                `Provider ${providerId} for target model ${targetModel} not found`,
+            );
         }
 
         return [targetModel, providerId, provider];
@@ -264,8 +337,10 @@ export class Router {
         }
 
         models.sort(([model1, id1], [model2, id2]) => {
-            const latency1 = this.latency.get(`${model1}@@${id1}`) ?? Number.MIN_SAFE_INTEGER;
-            const latency2 = this.latency.get(`${model2}@@${id2}`) ?? Number.MIN_SAFE_INTEGER;
+            const latency1 = this.latency.get(`${model1}@@${id1}`) ??
+                Number.MIN_SAFE_INTEGER;
+            const latency2 = this.latency.get(`${model2}@@${id2}`) ??
+                Number.MIN_SAFE_INTEGER;
             return latency1 - latency2;
         });
 
@@ -277,7 +352,11 @@ export class Router {
         return models[0];
     }
 
-    private buildForwardRequest(request: Request, provider: Provider, path: string): { url: string; headers: Headers } {
+    private buildForwardRequest(
+        request: Request,
+        provider: Provider,
+        path: string,
+    ): { url: string; headers: Headers } {
         const url = new URL(provider.endpoint);
         url.pathname = path;
 
@@ -291,7 +370,11 @@ export class Router {
         return { url: url.toString(), headers };
     }
 
-    private async forwardRequest(url: string, headers: Headers, body: unknown): Promise<{ rawResponse: globalThis.Response; latencyMs: number }> {
+    private async forwardRequest(
+        url: string,
+        headers: Headers,
+        body: unknown,
+    ): Promise<{ rawResponse: globalThis.Response; latencyMs: number }> {
         const startTime = performance.now();
         const rawResponse = await fetch(url, {
             method: "POST",
@@ -302,7 +385,10 @@ export class Router {
         return { rawResponse, latencyMs };
     }
 
-    private buildResponse(request: Request, rawResponse: globalThis.Response): Response {
+    private buildResponse(
+        request: Request,
+        rawResponse: globalThis.Response,
+    ): Response {
         const response = new Response(request);
         response.status = rawResponse.status;
         response.headers = rawResponse.headers;
@@ -335,36 +421,65 @@ export class Router {
         });
 
         const reader = middlewareStream.getReader();
-        reader.read().then(function chunkReader({ done, value }): Promise<void> {
-            if (done) return Promise.resolve();
-            parser.feed(new TextDecoder().decode(value));
-            return reader.read().then(chunkReader);
-        });
+        reader.read().then(
+            function chunkReader({ done, value }): Promise<void> {
+                if (done) return Promise.resolve();
+                parser.feed(new TextDecoder().decode(value));
+                return reader.read().then(chunkReader);
+            },
+        );
     }
 
     public async route(request: Request): Promise<Response> {
         const body = await request.body.json();
         migrateDeprecatedFields(body);
 
-        const [sourceModel, isStream] = [body.model as Model, body.stream as boolean];
-        const [targetModel, providerId, provider] = this.resolveTargetModel(sourceModel);
+        const [sourceModel, isStream] = [
+            body.model as Model,
+            body.stream as boolean,
+        ];
+        const [targetModel, providerId, provider] = this.resolveTargetModel(
+            sourceModel,
+        );
 
-        console.info(`Routing ${isStream ? "stream" : "non-stream"} request: ${sourceModel} -> ${targetModel}@@${providerId}`);
+        console.info(
+            `Routing ${
+                isStream ? "stream" : "non-stream"
+            } request: ${sourceModel} -> ${targetModel}@@${providerId}`,
+        );
 
-        const { url, headers } = this.buildForwardRequest(request, provider, provider.path);
+        const { url, headers } = this.buildForwardRequest(
+            request,
+            provider,
+            provider.path,
+        );
         body.model = targetModel;
 
-        const { rawResponse, latencyMs } = await this.forwardRequest(url, headers, body);
+        const { rawResponse, latencyMs } = await this.forwardRequest(
+            url,
+            headers,
+            body,
+        );
         this.updateLatency(targetModel, providerId, latencyMs);
 
         const response = this.buildResponse(request, rawResponse);
-        const ctx: RouteContext = { requestId: "", sourceModel, targetModel, providerId, latencyMs };
+        const ctx: RouteContext = {
+            requestId: "",
+            sourceModel,
+            targetModel,
+            providerId,
+            latencyMs,
+        };
 
         if (isStream) {
-            this.processStreamResponse<CompletionChunk>(rawResponse, response, (chunk) => {
-                ctx.requestId = chunk.id;
-                logCompletionResult(chunk, ctx, true);
-            });
+            this.processStreamResponse<CompletionChunk>(
+                rawResponse,
+                response,
+                (chunk) => {
+                    ctx.requestId = chunk.id;
+                    logCompletionResult(chunk, ctx, true);
+                },
+            );
         } else {
             const result = await rawResponse.json() as CompletionResponse;
             response.body = result;
@@ -378,29 +493,56 @@ export class Router {
     public async routeResponses(request: Request): Promise<Response> {
         const body = await request.body.json();
 
-        const [sourceModel, isStream] = [body.model as Model, body.stream as boolean];
-        const [targetModel, providerId, provider] = this.resolveTargetModel(sourceModel);
+        const [sourceModel, isStream] = [
+            body.model as Model,
+            body.stream as boolean,
+        ];
+        const [targetModel, providerId, provider] = this.resolveTargetModel(
+            sourceModel,
+        );
 
-        console.info(`Routing responses ${isStream ? "stream" : "non-stream"} request: ${sourceModel} -> ${targetModel}@@${providerId}`);
+        console.info(
+            `Routing responses ${
+                isStream ? "stream" : "non-stream"
+            } request: ${sourceModel} -> ${targetModel}@@${providerId}`,
+        );
 
         const responsesPath = provider.responses_path || DEFAULT_RESPONSES_PATH;
-        const { url, headers } = this.buildForwardRequest(request, provider, responsesPath);
+        const { url, headers } = this.buildForwardRequest(
+            request,
+            provider,
+            responsesPath,
+        );
         body.model = targetModel;
 
-        const { rawResponse, latencyMs } = await this.forwardRequest(url, headers, body);
+        const { rawResponse, latencyMs } = await this.forwardRequest(
+            url,
+            headers,
+            body,
+        );
         this.updateLatency(targetModel, providerId, latencyMs);
 
         const response = this.buildResponse(request, rawResponse);
-        const ctx: RouteContext = { requestId: "", sourceModel, targetModel, providerId, latencyMs };
+        const ctx: RouteContext = {
+            requestId: "",
+            sourceModel,
+            targetModel,
+            providerId,
+            latencyMs,
+        };
 
         if (isStream) {
-            this.processStreamResponse<ResponsesStreamEvent>(rawResponse, response, (event) => {
-                if (event.type === "response.completed" && event.response) {
-                    const resp = event.response as ResponsesResponse;
-                    ctx.requestId = resp.id;
-                    logResponsesResult(resp, ctx);
-                }
-            });
+            this.processStreamResponse<ResponsesStreamEvent>(
+                rawResponse,
+                response,
+                (event) => {
+                    if (event.type === "response.completed" && event.response) {
+                        const resp = event.response as ResponsesResponse;
+                        ctx.requestId = resp.id;
+                        logResponsesResult(resp, ctx);
+                    }
+                },
+            );
         } else {
             const result = await rawResponse.json() as ResponsesResponse;
             response.body = result;
@@ -415,7 +557,9 @@ export class Router {
         this.latency.set(`${model}@@${provider}`, latency);
     }
 
-    public async getStats(): Promise<{ hash: string; latency: Record<string, number> }> {
+    public async getStats(): Promise<
+        { hash: string; latency: Record<string, number> }
+    > {
         const sortedLatency = new Map(
             [...this.latency.entries()].sort(([, a], [, b]) => a - b),
         );
