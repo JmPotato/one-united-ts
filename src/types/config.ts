@@ -3,6 +3,7 @@ import { parse } from "@std/yaml";
 import { blake3 } from "hash-wasm";
 
 const DEFAULT_COMPLETION_PATH = "/v1/chat/completions";
+const DEFAULT_RESPONSES_PATH = "/v1/responses";
 
 export type Model = string;
 export type Identifier = string;
@@ -22,6 +23,7 @@ export interface Provider {
     identifier: Identifier;
     endpoint: string;
     path: string;
+    responses_path?: string;
     api_key: string;
     models: Model[];
 }
@@ -72,12 +74,18 @@ export function buildConfig(yamlContent: string): Config {
             if (!provider.path) {
                 provider.path = DEFAULT_COMPLETION_PATH;
             }
+            if (!provider.responses_path) {
+                provider.responses_path = DEFAULT_RESPONSES_PATH;
+            }
             // Normalize the endpoint and path
             if (provider.endpoint.endsWith("/")) {
                 provider.endpoint = provider.endpoint.slice(0, -1);
             }
             if (!provider.path.startsWith("/")) {
                 provider.path = `/${provider.path}`;
+            }
+            if (!provider.responses_path.startsWith("/")) {
+                provider.responses_path = `/${provider.responses_path}`;
             }
         });
 

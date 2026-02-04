@@ -16,6 +16,7 @@ const CONFIG_PATH = "/config";
 const STATS_PATH = "/stats";
 const MODELS_PATH = "/v1/models";
 const COMPLETIONS_PATH = "/v1/chat/completions";
+const RESPONSES_PATH = "/v1/responses";
 
 // Initialize KV database
 const KV = await openKv();
@@ -135,6 +136,21 @@ oakRouter.post(COMPLETIONS_PATH, async (ctx: Context) => {
     try {
         const router = await getRouter();
         ctx.response = await router.route(ctx.request);
+    } catch (error: unknown) {
+        ctx.response.status = 500;
+        ctx.response.body = {
+            error: error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+        };
+    }
+});
+
+// Responses endpoint (OpenAI Responses API)
+oakRouter.post(RESPONSES_PATH, async (ctx: Context) => {
+    try {
+        const router = await getRouter();
+        ctx.response = await router.routeResponses(ctx.request);
     } catch (error: unknown) {
         ctx.response.status = 500;
         ctx.response.body = {
