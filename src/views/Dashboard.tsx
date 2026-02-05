@@ -307,6 +307,10 @@ h1 {
   .card { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .latency { margin-left: 0; }
   .bar-container { max-width: 100%; width: 100%; }
+  .auth-row { flex-direction: column; }
+  .auth-input { width: 100%; }
+  .auth-btn { width: 100%; }
+  .meta { flex-direction: column; gap: 0.5rem; align-items: center; }
 }
 `;
 
