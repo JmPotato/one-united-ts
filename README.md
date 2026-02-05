@@ -1,27 +1,22 @@
 # one-united-ts
 
 [![GitHub License](https://img.shields.io/github/license/JmPotato/one-united-ts)](https://github.com/JmPotato/one-united-ts/blob/main/LICENSE)
-[![Deno Test](https://github.com/JmPotato/one-united-ts/actions/workflows/deno-test.yml/badge.svg)](https://github.com/JmPotato/one-united-ts/actions/workflows/deno-test.yml)
+[![Bun Test](https://github.com/JmPotato/one-united-ts/actions/workflows/bun-test.yml/badge.svg)](https://github.com/JmPotato/one-united-ts/actions/workflows/bun-test.yml)
 
 A TypeScript implementation of [one-united](https://github.com/JmPotato/one-united), providing a robust API gateway for Large Language Models (LLMs). This version enhances the original Rust implementation with improved deployment capabilities while maintaining core functionality.
 
 ## ✨ Key Features
 
-* 🚀 **Seamless Deployment**: Zero-configuration deployment to Deno Deploy
-* 🔄 **OpenAI API Compatible**: Direct replacement for existing OpenAI API clients
+* 🚀 **Fast & Lightweight**: Powered by Bun runtime and Elysia framework
+* 🔄 **OpenAI API Compatible**: Direct replacement for existing OpenAI API clients (Chat Completions & Responses API)
 * ⚖️ **Intelligent Load Balancing**: Dynamic routing based on provider latency
 * 🌐 **Multi-Provider Integration**: Single unified interface for multiple LLM providers
 
-## 🚀 Deno Deploy
-
-Refer to [Deno Deploy](https://docs.deno.com/deploy/manual) for detailed deployment steps.
-
 ## 💻 Local Development
 
-1. Install Deno:
+1. Install Bun:
 ```bash
-curl -fsSL https://deno.land/install.sh | sh  # macOS/Linux
-irm https://deno.land/install.ps1 | iex      # Windows (PowerShell)
+curl -fsSL https://bun.sh/install | bash
 ```
 
 2. Clone the repository:
@@ -30,18 +25,23 @@ git clone https://github.com/JmPotato/one-united-ts.git
 cd one-united-ts
 ```
 
-3. Set up environment variables:
+3. Install dependencies:
+```bash
+bun install
+```
+
+4. Set up environment variables:
 ```bash
 # Create a .env file
 echo "ONE_API_KEY=your_secret_key" > .env
 ```
 
-4. Start the development server:
+5. Start the development server:
 ```bash
-deno task dev
+bun run dev
 ```
 
-The server will start at `http://0.0.0.0:5299` by default.
+The server will start at `http://127.0.0.1:5299` by default.
 
 ## 🔧 Configuration
 
@@ -52,7 +52,8 @@ providers:
   - name: OpenAI
     identifier: openai-platform
     endpoint: https://api.openai.com
-    path: /v1/chat/completions
+    path: /v1/chat/completions        # Optional, defaults to /v1/chat/completions
+    responses_path: /v1/responses     # Optional, defaults to /v1/responses
     api_key: $YOUR_OPENAI_API_KEY
     models:
       - gpt-4o
@@ -121,6 +122,7 @@ curl https://your-deployment-url/v1/chat/completions \
 | `/stats`               | GET    | Get routing statistics and config hash     |
 | `/v1/models`           | GET    | List available models                      |
 | `/v1/chat/completions` | POST   | OpenAI-compatible chat completion endpoint |
+| `/v1/responses`        | POST   | OpenAI-compatible responses API endpoint   |
 
 ### Provider Selection Override
 
@@ -132,6 +134,44 @@ Override default routing using the `model@@provider` syntax:
   "messages": [...]
 }
 ```
+
+## 🚀 Production Deployment (systemd)
+
+1. Copy the project to the target directory:
+```bash
+sudo cp -r /path/to/one-united-ts /opt/one-united-ts
+cd /opt/one-united-ts && bun install
+```
+
+2. Copy the service file and configure:
+```bash
+sudo cp one-united.service /etc/systemd/system/
+```
+
+3. Set the API key (recommended: use systemd override):
+```bash
+sudo systemctl edit one-united --force
+```
+Add the following content:
+```ini
+[Service]
+Environment=ONE_API_KEY=your_actual_api_key
+```
+
+4. Enable and start the service:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable one-united
+sudo systemctl start one-united
+```
+
+5. Check status and logs:
+```bash
+sudo systemctl status one-united
+journalctl -u one-united -f
+```
+
+**Note**: Adjust `User`, `Group`, `WorkingDirectory`, and bun path in `one-united.service` according to your environment.
 
 ## 📄 License
 

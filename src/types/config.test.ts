@@ -1,9 +1,8 @@
-import { assertEquals, assertThrows } from "@std/assert";
+import { expect, test } from "bun:test";
+import { buildConfig } from "@/types/config";
 
-import { buildConfig } from "@/types/config.ts";
-
-Deno.test("buildConfig - should parse a valid config correctly", () => {
-    const yamlContent = `
+test("buildConfig - should parse a valid config correctly", () => {
+	const yamlContent = `
 rules:
   - model: gpt-4
     providers:
@@ -22,180 +21,158 @@ providers:
       - gpt-4-turbo
 `;
 
-    const config = buildConfig(yamlContent);
-    assertEquals(config.rules.length, 1);
-    assertEquals(config.providers.length, 1);
-    assertEquals(config.rules[0].model, "gpt-4");
-    assertEquals(config.rules[0].providers[0].identifier, "openai");
-    assertEquals(config.providers[0].name, "OpenAI");
+	const config = buildConfig(yamlContent);
+	expect(config.rules.length).toBe(1);
+	expect(config.providers.length).toBe(1);
+	expect(config.rules[0].model).toBe("gpt-4");
+	expect(config.rules[0].providers[0].identifier).toBe("openai");
+	expect(config.providers[0].name).toBe("OpenAI");
 });
 
-Deno.test("buildConfig - should throw error when rules is missing", () => {
-    const yamlContent = `
+test("buildConfig - should throw error when rules is missing", () => {
+	const yamlContent = `
 providers:
-  - name: OpenAI
-    identifier: openai
-    endpoint: https://api.openai.com/v1
-    path: /v1/chat/completions
-    api_key: sk-test
-    models:
-      - gpt-4
+   - name: OpenAI
+     identifier: openai
+     endpoint: https://api.openai.com/v1
+     path: /v1/chat/completions
+     api_key: sk-test
+     models:
+       - gpt-4
 `;
 
-    assertThrows(
-        () => buildConfig(yamlContent),
-        Error,
-        "Rules must be defined",
-    );
+	expect(() => buildConfig(yamlContent)).toThrow("Rules must be defined");
 });
 
-Deno.test("buildConfig - should throw error when providers is missing", () => {
-    const yamlContent = `
+test("buildConfig - should throw error when providers is missing", () => {
+	const yamlContent = `
 rules:
-  - model: gpt-4
-    providers:
-      - identifier: openai
-        models:
-          - gpt-4
+   - model: gpt-4
+     providers:
+       - identifier: openai
+         models:
+           - gpt-4
 `;
 
-    assertThrows(
-        () => buildConfig(yamlContent),
-        Error,
-        "Providers must be defined",
-    );
+	expect(() => buildConfig(yamlContent)).toThrow("Providers must be defined");
 });
 
-Deno.test("buildConfig - should throw error when rule model is missing", () => {
-    const yamlContent = `
+test("buildConfig - should throw error when rule model is missing", () => {
+	const yamlContent = `
 rules:
-  - providers:
-      - identifier: openai
-        models:
-          - gpt-4
+   - providers:
+       - identifier: openai
+         models:
+           - gpt-4
 providers:
-  - name: OpenAI
-    identifier: openai
-    endpoint: https://api.openai.com/v1
-    path: /v1/chat/completions
-    api_key: sk-test
-    models:
-      - gpt-4
+   - name: OpenAI
+     identifier: openai
+     endpoint: https://api.openai.com/v1
+     path: /v1/chat/completions
+     api_key: sk-test
+     models:
+       - gpt-4
 `;
 
-    assertThrows(
-        () => buildConfig(yamlContent),
-        Error,
-        "Rule 0 must have a model name defined",
-    );
+	expect(() => buildConfig(yamlContent)).toThrow(
+		"Rule 0 must have a model name defined",
+	);
 });
 
-Deno.test("buildConfig - should throw error when rule providers is missing", () => {
-    const yamlContent = `
+test("buildConfig - should throw error when rule providers is missing", () => {
+	const yamlContent = `
 rules:
-  - model: gpt-4
+   - model: gpt-4
 providers:
-  - name: OpenAI
-    identifier: openai
-    endpoint: https://api.openai.com/v1
-    path: /v1/chat/completions
-    api_key: sk-test
-    models:
-      - gpt-4
+   - name: OpenAI
+     identifier: openai
+     endpoint: https://api.openai.com/v1
+     path: /v1/chat/completions
+     api_key: sk-test
+     models:
+       - gpt-4
 `;
 
-    assertThrows(
-        () => buildConfig(yamlContent),
-        Error,
-        "Rule 0 must have at least one provider defined",
-    );
+	expect(() => buildConfig(yamlContent)).toThrow(
+		"Rule 0 must have at least one provider defined",
+	);
 });
 
-Deno.test("buildConfig - should throw error when provider identifier is missing", () => {
-    const yamlContent = `
+test("buildConfig - should throw error when provider identifier is missing", () => {
+	const yamlContent = `
 rules:
-  - model: gpt-4
-    providers:
-      - identifier: openai
-        models:
-          - gpt-4
+   - model: gpt-4
+     providers:
+       - identifier: openai
+         models:
+           - gpt-4
 providers:
-  - name: OpenAI
-    endpoint: https://api.openai.com/v1
-    path: /v1/chat/completions
-    api_key: sk-test
-    models:
-      - gpt-4
+   - name: OpenAI
+     endpoint: https://api.openai.com/v1
+     path: /v1/chat/completions
+     api_key: sk-test
+     models:
+       - gpt-4
 `;
 
-    assertThrows(
-        () => buildConfig(yamlContent),
-        Error,
-        "Provider 0 must have an identifier",
-    );
+	expect(() => buildConfig(yamlContent)).toThrow(
+		"Provider 0 must have an identifier",
+	);
 });
 
-Deno.test("buildConfig - should throw error when provider endpoint is missing", () => {
-    const yamlContent = `
+test("buildConfig - should throw error when provider endpoint is missing", () => {
+	const yamlContent = `
 rules:
-  - model: gpt-4
-    providers:
-      - identifier: openai
-        models:
-          - gpt-4
+   - model: gpt-4
+     providers:
+       - identifier: openai
+         models:
+           - gpt-4
 providers:
-  - name: OpenAI
-    identifier: openai
-    path: /v1/chat/completions
-    api_key: sk-test
-    models:
-      - gpt-4
+   - name: OpenAI
+     identifier: openai
+     path: /v1/chat/completions
+     api_key: sk-test
+     models:
+       - gpt-4
 `;
 
-    assertThrows(
-        () => buildConfig(yamlContent),
-        Error,
-        "Provider 0 must have an endpoint",
-    );
+	expect(() => buildConfig(yamlContent)).toThrow(
+		"Provider 0 must have an endpoint",
+	);
 });
 
-Deno.test("buildConfig - should throw error when provider models is missing", () => {
-    const yamlContent = `
+test("buildConfig - should throw error when provider models is missing", () => {
+	const yamlContent = `
 rules:
-  - model: gpt-4
-    providers:
-      - identifier: openai
-        models:
-          - gpt-4
+   - model: gpt-4
+     providers:
+       - identifier: openai
+         models:
+           - gpt-4
 providers:
-  - name: OpenAI
-    identifier: openai
-    endpoint: https://api.openai.com/v1
-    path: /v1/chat/completions
-    api_key: sk-test
+   - name: OpenAI
+     identifier: openai
+     endpoint: https://api.openai.com/v1
+     path: /v1/chat/completions
+     api_key: sk-test
 `;
 
-    assertThrows(
-        () => buildConfig(yamlContent),
-        Error,
-        "Provider 0 must have at least one model defined",
-    );
+	expect(() => buildConfig(yamlContent)).toThrow(
+		"Provider 0 must have at least one model defined",
+	);
 });
 
-Deno.test("buildConfig - should throw error for invalid YAML", () => {
-    const yamlContent = `
+test("buildConfig - should throw error for invalid YAML", () => {
+	const yamlContent = `
 rules:
-  - model: gpt-4
-    providers:
-      - identifier: openai
-        models:
-          - gpt-4
-  invalid-yaml-here
+   - model: gpt-4
+     providers:
+       - identifier: openai
+         models:
+           - gpt-4
+   invalid-yaml-here
 `;
 
-    assertThrows(
-        () => buildConfig(yamlContent),
-        Error,
-        "Failed to parse config",
-    );
+	expect(() => buildConfig(yamlContent)).toThrow("Failed to parse config");
 });

@@ -1,0 +1,39 @@
+{
+	"name": "one-united-ts",
+	"version": "1.0.0",
+	"type": "module",
+	"description": "LLM API Gateway for routing requests to multiple providers with latency-based load balancing",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/JmPotato/one-united-ts.git"
+	},
+	"author": "JmPotato",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/JmPotato/one-united-ts/issues"
+	},
+	"homepage": "https://github.com/JmPotato/one-united-ts#readme",
+	"engines": {
+		"bun": ">=1.0.0"
+	},
+	"scripts": {
+		"dev": "bun --watch src/app.ts",
+		"start": "bun src/app.ts",
+		"test": "bun test",
+		"build": "tsc",
+		"typecheck": "tsc --noEmit",
+		"fmt": "bunx @biomejs/biome format --write .",
+		"fmt:check": "bunx @biomejs/biome format .",
+		"lint": "bunx @biomejs/biome lint ."
+	},
+	"dependencies": {
+		"elysia": "^1.1.0",
+		"picocolors": "^1.0.0",
+		"eventsource-parser": "^1.1.2",
+		"hash-wasm": "^4.11.0"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"typescript": "^5.3.0"
+	}
+}

@@ -6,23 +6,23 @@ load balancing.
 ## Quick Reference
 
 ```bash
-deno task dev              # Start dev server with watch mode
-deno task prod             # Start production server
-deno lint                  # Run linter
-deno fmt                   # Format code
-deno fmt --check           # Check formatting
-deno test -A               # Run all tests
-deno test -A src/router/router.test.ts                    # Run single test file
-deno test -A --filter="Router constructor"                # Run tests matching pattern
-deno check src/            # Type check all source files
+bun run dev                # Start dev server with watch mode
+bun run start              # Start production server
+bun run lint               # Run linter (Biome)
+bun run fmt                # Format code (Biome)
+bun run fmt:check          # Check formatting
+bun test                   # Run all tests
+bun test src/router/router.test.ts                        # Run single test file
+bun test --filter="Router constructor"                    # Run tests matching pattern
+bun run typecheck          # Type check all source files
 ```
 
 ## Project Structure
 
 ```
 src/
-├── app.ts                 # Entry point, Oak routes, CLI
-├── global.ts              # KV storage, router singleton
+├── app.ts                 # Entry point, Elysia routes
+├── global.ts              # SQLite storage, router singleton
 ├── router/
 │   ├── router.ts          # Core routing logic
 │   └── router.test.ts     # Router tests
@@ -35,11 +35,10 @@ src/
 
 ## Technology Stack
 
-- **Runtime**: Deno 2.x
-- **Framework**: Oak (web framework)
-- **Storage**: Deno KV
-- **CLI**: Cliffy Command
-- **Testing**: Deno built-in test runner
+- **Runtime**: Bun
+- **Framework**: Elysia (web framework)
+- **Storage**: Bun SQLite
+- **Testing**: bun:test
 
 ## Code Style Guidelines
 
@@ -47,15 +46,13 @@ src/
 
 Order imports in this sequence:
 
-1. Standard library (`@std/*`)
-2. Framework imports (`@oak/*`, `@cliffy/*`)
-3. npm packages
-4. Local imports (`@/`)
+1. External packages (elysia, yaml, picocolors, etc.)
+2. Local imports (`@/`)
 
 ```typescript
-import { bold, yellow } from "@std/fmt/colors";
-import { Application } from "@oak/oak/application";
-import { createParser } from "eventsource-parser";
+import { Elysia } from "elysia";
+import pc from "picocolors";
+import { stringify } from "yaml";
 import { Router } from "@/router/router.ts";
 ```
 
@@ -64,10 +61,10 @@ extension for local imports.
 
 ### Formatting
 
-Configured in `deno.json`:
+Configured via Biome (run with `bunx @biomejs/biome`):
 
 - Indent: 4 spaces
-- Run `deno fmt` before committing
+- Run `bun run fmt` before committing
 
 ### Types
 
@@ -103,38 +100,39 @@ Use typed error handling with `error: unknown`:
 try {
     // ...
 } catch (error: unknown) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-        error: error instanceof Error
-            ? error.message
-            : "An unknown error occurred",
-    };
+    return new Response(
+        JSON.stringify({
+            error: error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } },
+    );
 }
 ```
 
 ### Testing
 
 - Test files: `*.test.ts` next to source files
-- Use `Deno.test()` with descriptive names
-- Import assertions from `@std/assert`
+- Use `bun:test` with descriptive names
+- Import assertions from `bun:test`
 
 ```typescript
-import { assertEquals, assertThrows } from "@std/assert";
+import { describe, expect, test } from "bun:test";
 
-Deno.test("Router constructor - should initialize with valid config", () => {
+test("Router constructor - should initialize with valid config", () => {
     // ...
-    assertEquals(router instanceof Router, true);
+    expect(router instanceof Router).toBe(true);
 });
 
-Deno.test("Router constructor - should throw error for duplicate providers", () => {
-    assertThrows(() => new Router(config), Error, "expected error message");
+test("Router constructor - should throw error for duplicate providers", () => {
+    expect(() => new Router(config)).toThrow("expected error message");
 });
 ```
 
 ### Comments
 
 - Avoid comments; write self-documenting code
-- Use `// deno-lint-ignore <rule>` only when necessary
 - No docstrings unless documenting public API
 
 ### Async/Await
@@ -144,18 +142,19 @@ Deno.test("Router constructor - should throw error for duplicate providers", () 
 
 ## CI/CD
 
-GitHub Actions workflow (`.github/workflows/deno-test.yml`):
+GitHub Actions workflow (`.github/workflows/bun-test.yml`):
 
-1. `deno fmt --check` - Verify formatting
-2. `deno lint` - Run linter
-3. `deno test -A` - Run all tests
+1. `bun run fmt:check` - Verify formatting
+2. `bun run lint` - Run linter
+3. `bun test` - Run all tests
 
 All checks must pass before merging to `main`.
 
 ## Environment Variables
 
 - `ONE_API_KEY` - API key for authentication (optional)
-- `DENO_DEPLOYMENT_ID` - Set automatically by Deno Deploy
+- `PORT` - Server port (default: 5299)
+- `HOSTNAME` - Server hostname (default: 127.0.0.1)
 
 ## Key Patterns
 

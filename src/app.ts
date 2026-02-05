@@ -1,207 +1,119 @@
-import { bold, yellow } from "@std/fmt/colors";
-import { stringify } from "@std/yaml";
+import { Elysia } from "elysia";
+import pc from "picocolors";
 
-import { Application } from "@oak/oak/application";
-import { Context } from "@oak/oak/context";
-import { Router } from "@oak/oak/router";
-import { Command } from "@cliffy/command";
+import { getConfig, getRouter, setConfig } from "@/global";
+import { buildConfig, Config } from "@/types/config";
 
-import { getConfig, getRouter, openKv, setConfig } from "@/global.ts";
-import { buildConfig, Config } from "@/types/config.ts";
+const ONE_API_KEY = Bun.env.ONE_API_KEY;
+const PORT = parseInt(Bun.env.PORT || "5299");
+const HOSTNAME = Bun.env.HOSTNAME || "127.0.0.1";
 
-const ONE_API_KEY = Deno.env.get("ONE_API_KEY");
+const CONTENT_TYPE = "Content-Type";
+const APPLICATION_JSON = "application/json";
+const APPLICATION_YAML = "application/yaml";
 
-// Endpoint paths
-const CONFIG_PATH = "/config";
-const STATS_PATH = "/stats";
-const MODELS_PATH = "/v1/models";
-const COMPLETIONS_PATH = "/v1/chat/completions";
-const RESPONSES_PATH = "/v1/responses";
+const JSON_HEADERS = { [CONTENT_TYPE]: APPLICATION_JSON } as const;
 
-// Initialize KV database
-const KV = await openKv();
-const oakRouter = new Router();
+function jsonResponse(body: object, status: number): Response {
+	return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+}
 
-// Config endpoints
-oakRouter.get(CONFIG_PATH, async (ctx: Context) => {
-    try {
-        const config = await getConfig(KV);
-        if (!config) {
-            ctx.response.status = 404;
-            ctx.response.body = { error: "Configuration not found" };
-            return;
-        }
+function errorResponse(error: unknown, status = 500): Response {
+	const message =
+		error instanceof Error ? error.message : "An unknown error occurred";
+	return jsonResponse({ error: message }, status);
+}
 
-        // Get the Accept header and determine the response format
-        const accept = ctx.request.headers.get("Accept") || "application/json";
-        if (accept.includes("application/yaml")) {
-            // Convert config to YAML
-            const yaml = stringify(config);
-            ctx.response.headers.set("Content-Type", "application/yaml");
-            ctx.response.body = yaml;
-        } else {
-            // Default to JSON
-            ctx.response.headers.set("Content-Type", "application/json");
-            ctx.response.body = config;
-        }
-    } catch (error: unknown) {
-        ctx.response.status = 500;
-        ctx.response.body = {
-            error: error instanceof Error
-                ? error.message
-                : "An unknown error occurred",
-        };
-    }
-});
+const app = new Elysia()
+	.onBeforeHandle(({ request, set }) => {
+		const apiKey = request.headers.get("Authorization");
+		if (ONE_API_KEY && apiKey !== `Bearer ${ONE_API_KEY}`) {
+			set.status = 401;
+			return { error: "Unauthorized or invalid ONE_API_KEY in the header" };
+		}
+	})
+	.get("/config", async ({ request }) => {
+		try {
+			const config = await getConfig();
+			if (!config) {
+				return jsonResponse({ error: "Configuration not found" }, 404);
+			}
 
-oakRouter.post(CONFIG_PATH, async (ctx: Context) => {
-    try {
-        // Retrieve the config from the request body according to the CONTENT-TYPE header
-        const contentType = ctx.request.headers.get("content-type");
-        let config: Config;
-        if (contentType === "application/json") {
-            config = await ctx.request.body.json();
-        } else if (contentType === "application/yaml") {
-            config = buildConfig(await ctx.request.body.text());
-        } else {
-            ctx.response.status = 415;
-            ctx.response.body = { error: "Unsupported media type" };
-            return;
-        }
-        // Update the config in the KV database
-        await setConfig(KV, config);
-        ctx.response.body = {
-            message: "Configuration updated successfully",
-        };
-    } catch (error: unknown) {
-        ctx.response.status = 500;
-        ctx.response.body = {
-            error: error instanceof Error
-                ? error.message
-                : "An unknown error occurred",
-        };
-    }
-});
+			const accept = request.headers.get("Accept") || APPLICATION_JSON;
+			if (accept.includes(APPLICATION_YAML)) {
+				return new Response(Bun.YAML.stringify(config), {
+					headers: { [CONTENT_TYPE]: APPLICATION_YAML },
+				});
+			}
 
-// Stats endpoint
-oakRouter.get(STATS_PATH, async (ctx: Context) => {
-    try {
-        const router = await getRouter();
-        const stats = await router.getStats();
-        ctx.response.body = stats;
-    } catch (error: unknown) {
-        ctx.response.status = 500;
-        ctx.response.body = {
-            error: error instanceof Error
-                ? error.message
-                : "An unknown error occurred",
-        };
-    }
-});
+			return config;
+		} catch (error: unknown) {
+			return errorResponse(error);
+		}
+	})
+	.post("/config", async ({ request }) => {
+		try {
+			const contentType = request.headers.get("content-type");
+			let config: Config;
+			if (contentType === APPLICATION_JSON) {
+				config = await request.json();
+			} else if (contentType === APPLICATION_YAML) {
+				config = buildConfig(await request.text());
+			} else {
+				return jsonResponse({ error: "Unsupported media type" }, 415);
+			}
+			await setConfig(config);
+			return { message: "Configuration updated successfully" };
+		} catch (error: unknown) {
+			return errorResponse(error);
+		}
+	})
+	.get("/stats", async () => {
+		try {
+			const router = await getRouter();
+			return await router.getStats();
+		} catch (error: unknown) {
+			return errorResponse(error);
+		}
+	})
+	.get("/v1/models", async () => {
+		try {
+			const config = await getConfig();
+			if (!config) {
+				return jsonResponse({ error: "Configuration not found" }, 404);
+			}
 
-// Models endpoint
-oakRouter.get(MODELS_PATH, async (ctx: Context) => {
-    try {
-        const config = await getConfig(KV);
-        if (!config) {
-            ctx.response.status = 404;
-            ctx.response.body = { error: "Configuration not found" };
-            return;
-        }
+			const models = config.rules.map((rule) => rule.model);
+			return {
+				object: "list",
+				data: models.map((model) => ({ id: model, object: "model" })),
+			};
+		} catch (error: unknown) {
+			return errorResponse(error);
+		}
+	})
+	.post("/v1/chat/completions", async ({ request }) => {
+		try {
+			const router = await getRouter();
+			return await router.route(request);
+		} catch (error: unknown) {
+			return errorResponse(error);
+		}
+	})
+	.post("/v1/responses", async ({ request }) => {
+		try {
+			const router = await getRouter();
+			return await router.routeResponses(request);
+		} catch (error: unknown) {
+			return errorResponse(error);
+		}
+	})
+	.listen({ port: PORT, hostname: HOSTNAME }, (server) => {
+		console.log(
+			`${pc.bold("Start listening on ")}${pc.yellow(
+				`${server.hostname ?? HOSTNAME}:${server.port}`,
+			)}`,
+		);
+	});
 
-        // Get models from rules
-        const models = config.rules.map((rule) => rule.model);
-
-        // Format response according to OpenAI API spec
-        // @see https://platform.openai.com/docs/api-reference/models/list
-        ctx.response.body = {
-            object: "list",
-            data: models.map((model) => ({
-                id: model,
-                object: "model",
-            })),
-        };
-    } catch (error: unknown) {
-        ctx.response.status = 500;
-        ctx.response.body = {
-            error: error instanceof Error
-                ? error.message
-                : "An unknown error occurred",
-        };
-    }
-});
-
-// Completions endpoint
-oakRouter.post(COMPLETIONS_PATH, async (ctx: Context) => {
-    try {
-        const router = await getRouter();
-        ctx.response = await router.route(ctx.request);
-    } catch (error: unknown) {
-        ctx.response.status = 500;
-        ctx.response.body = {
-            error: error instanceof Error
-                ? error.message
-                : "An unknown error occurred",
-        };
-    }
-});
-
-// Responses endpoint (OpenAI Responses API)
-oakRouter.post(RESPONSES_PATH, async (ctx: Context) => {
-    try {
-        const router = await getRouter();
-        ctx.response = await router.routeResponses(ctx.request);
-    } catch (error: unknown) {
-        ctx.response.status = 500;
-        ctx.response.body = {
-            error: error instanceof Error
-                ? error.message
-                : "An unknown error occurred",
-        };
-    }
-});
-
-const app = new Application();
-
-// Add a middleware to check if the API key is valid
-app.use(async (ctx, next) => {
-    const apiKey = ctx.request.headers.get("Authorization");
-    if (ONE_API_KEY && apiKey !== `Bearer ${ONE_API_KEY}`) {
-        ctx.response.status = 401;
-        ctx.response.body = {
-            error: "Unauthorized or invalid ONE_API_KEY in the header",
-        };
-        return;
-    }
-    await next();
-});
-app.use(oakRouter.routes());
-app.use(oakRouter.allowedMethods());
-
-// Log when we start listening for requests
-app.addEventListener("listen", ({ hostname, port, serverType }) => {
-    console.log(
-        `${bold("Start listening on ")}${yellow(`${hostname}:${port}`)} ${
-            bold("using HTTP server:")
-        } ${yellow(serverType)}`,
-    );
-});
-
-// Start listening to requests
-const { hostname, port } = await new Command()
-    .name("one-united")
-    .version("0.1.0")
-    .description(
-        "A lightweight API gateway for LLMs, designed to simplify interactions with multiple LLM providers by exposing an one-united OpenAI-compatible endpoint.",
-    )
-    .option("-H, --hostname <hostname:string>", "Server hostname", {
-        default: "127.0.0.1",
-    })
-    .option("-p, --port <port:number>", "Server port", { default: 5299 })
-    .parse(Deno.args)
-    .then((result: { options: { hostname: string; port: number } }) => ({
-        hostname: result.options.hostname,
-        port: result.options.port,
-    }));
-
-await app.listen({ hostname, port });
+export default app;
