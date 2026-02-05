@@ -145,12 +145,12 @@ cd /opt/one-united-ts && bun install
 
 2. Copy the service file and configure:
 ```bash
-sudo cp one-united.service /etc/systemd/system/
+sudo cp one-united-ts.service /etc/systemd/system/
 ```
 
 3. Set the API key (recommended: use systemd override):
 ```bash
-sudo systemctl edit one-united --force
+sudo systemctl edit one-united-ts --force
 ```
 Add the following content:
 ```ini
@@ -161,17 +161,17 @@ Environment=ONE_API_KEY=your_actual_api_key
 4. Enable and start the service:
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable one-united
-sudo systemctl start one-united
+sudo systemctl enable one-united-ts
+sudo systemctl start one-united-ts
 ```
 
 5. Check status and logs:
 ```bash
-sudo systemctl status one-united
-journalctl -u one-united -f
+sudo systemctl status one-united-ts
+journalctl -u one-united-ts -f
 ```
 
-**Note**: Adjust `User`, `Group`, `WorkingDirectory`, and bun path in `one-united.service` according to your environment.
+**Note**: Adjust `WorkingDirectory` and bun path in `one-united-ts.service` according to your environment. The service uses `DynamicUser=yes` for automatic sandboxing.
 
 ## 📄 License
 

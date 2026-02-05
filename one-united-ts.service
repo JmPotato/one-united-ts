@@ -1,0 +1,30 @@
+[Unit]
+Description=one-united-ts - LLM API Gateway
+Documentation=https://github.com/JmPotato/one-united-ts
+After=network.target
+
+[Service]
+WorkingDirectory=/var/lib/one-united-ts
+ExecStart=/usr/local/bin/bun /opt/one-united-ts/src/app.ts
+Restart=on-failure
+RestartSec=5
+
+DynamicUser=yes
+StateDirectory=one-united-ts
+
+Environment=NODE_ENV=production
+Environment=PORT=5222
+Environment=HOSTNAME=127.0.0.1
+Environment=ONE_API_KEY=sk-your-key-here
+
+StandardOutput=journal
+StandardError=journal
+
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=true
+DeviceAllow=/dev/null rw
+
+[Install]
+WantedBy=multi-user.target
