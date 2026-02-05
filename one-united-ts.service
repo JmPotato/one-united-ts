@@ -4,8 +4,8 @@ Documentation=https://github.com/JmPotato/one-united-ts
 After=network.target
 
 [Service]
-WorkingDirectory=/var/lib/one-united-ts
-ExecStart=/usr/local/bin/bun /opt/one-united-ts/src/app.ts
+WorkingDirectory=/opt/one-united-ts
+ExecStart=bun src/app.ts
 Restart=on-failure
 RestartSec=5
 
@@ -15,6 +15,7 @@ StateDirectory=one-united-ts
 Environment=NODE_ENV=production
 Environment=PORT=5222
 Environment=HOSTNAME=127.0.0.1
+Environment=DATABASE_PATH=/var/lib/one-united-ts/kv.db
 Environment=ONE_API_KEY=sk-your-key-here
 
 StandardOutput=journal

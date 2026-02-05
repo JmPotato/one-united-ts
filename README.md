@@ -171,8 +171,6 @@ sudo systemctl status one-united-ts
 journalctl -u one-united-ts -f
 ```
 
-**Note**: Adjust `WorkingDirectory` and bun path in `one-united-ts.service` according to your environment. The service uses `DynamicUser=yes` for automatic sandboxing.
-
 ## 📄 License
 
 MIT License - see the [LICENSE](LICENSE) file for details.

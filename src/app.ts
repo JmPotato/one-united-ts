@@ -2,7 +2,7 @@ import { Elysia } from "elysia";
 import { html } from "@elysiajs/html";
 import pc from "picocolors";
 
-import { getConfig, getRouter, setConfig } from "@/global";
+import { getConfig, getRouter, setConfig } from "@/store";
 import { buildConfig, type Config } from "@/types/config";
 import { Dashboard } from "@/views/Dashboard";
 

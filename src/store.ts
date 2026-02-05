@@ -4,7 +4,9 @@ import { type Config, hashConfig } from "@/types/config";
 
 const CONFIG_KEY = "config";
 
-const db = new Database("kv.db", { create: true });
+const databasePath = Bun.env.DATABASE_PATH || "kv.db";
+const db = new Database(databasePath, { create: true });
+console.info(`Using database at: ${databasePath}`);
 db.run(
 	"CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
 );
