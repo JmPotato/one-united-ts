@@ -1,11 +1,13 @@
 import { Elysia } from "elysia";
+import { html } from "@elysiajs/html";
 import pc from "picocolors";
 
 import { getConfig, getRouter, setConfig } from "@/global";
-import { buildConfig, Config } from "@/types/config";
+import { buildConfig, type Config } from "@/types/config";
+import { Dashboard } from "@/views/Dashboard";
 
 const ONE_API_KEY = Bun.env.ONE_API_KEY;
-const PORT = parseInt(Bun.env.PORT || "5299");
+const PORT = parseInt(Bun.env.PORT || "5299", 10);
 const HOSTNAME = Bun.env.HOSTNAME || "127.0.0.1";
 
 const CONTENT_TYPE = "Content-Type";
@@ -25,7 +27,13 @@ function errorResponse(error: unknown, status = 500): Response {
 }
 
 const app = new Elysia()
+	.use(html())
+	.get("/", () => Dashboard())
 	.onBeforeHandle(({ request, set }) => {
+		const pathname = new URL(request.url).pathname;
+		// Skip auth for dashboard
+		if (pathname === "/") return;
+
 		const apiKey = request.headers.get("Authorization");
 		if (ONE_API_KEY && apiKey !== `Bearer ${ONE_API_KEY}`) {
 			set.status = 401;

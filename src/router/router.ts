@@ -1,16 +1,19 @@
 import { createParser } from "eventsource-parser";
 
-import { CompletionChunk, CompletionResponse } from "@/types/completaion";
-import { ResponsesResponse, ResponsesStreamEvent } from "@/types/responses";
+import type { CompletionChunk, CompletionResponse } from "@/types/completaion";
+import type {
+	ResponsesResponse,
+	ResponsesStreamEvent,
+} from "@/types/responses";
 import {
-	Config,
+	type Config,
 	DEFAULT_RESPONSES_PATH,
 	hashConfig,
-	Identifier,
-	Model,
-	Provider,
+	type Identifier,
+	type Model,
+	type Provider,
 	PROVIDER_SEPARATOR,
-	Rule,
+	type Rule,
 } from "@/types/config";
 
 export const RANDOM_PROVIDER_CHANCE = 0.2;
@@ -41,7 +44,7 @@ function truncateString(
 ): string {
 	if (!str) return "";
 	if (str.length <= maxLength) return str;
-	return str.slice(0, maxLength) + "...";
+	return `${str.slice(0, maxLength)}...`;
 }
 
 function redactBase64Data(data: string | null | undefined): string {
@@ -51,6 +54,7 @@ function redactBase64Data(data: string | null | undefined): string {
 	return looksLikeBase64 ? SENSITIVE_DATA_PLACEHOLDER : truncateString(data);
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: body is a dynamic request payload
 function migrateDeprecatedFields(body: any): void {
 	if (
 		body.max_tokens !== undefined &&

@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { Router } from "@/router/router";
-import { Config, hashConfig } from "@/types/config";
+import { type Config, hashConfig } from "@/types/config";
 
 const CONFIG_KEY = "config";
 

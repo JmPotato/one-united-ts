@@ -27,10 +27,11 @@
 		"lint": "bunx @biomejs/biome lint ."
 	},
 	"dependencies": {
+		"@elysiajs/html": "^1.4.0",
 		"elysia": "^1.1.0",
-		"picocolors": "^1.0.0",
 		"eventsource-parser": "^1.1.2",
-		"hash-wasm": "^4.11.0"
+		"hash-wasm": "^4.11.0",
+		"picocolors": "^1.0.0"
 	},
 	"devDependencies": {
 		"@types/bun": "latest",

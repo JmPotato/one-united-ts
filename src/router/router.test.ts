@@ -1,7 +1,7 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 
 import { RANDOM_PROVIDER_CHANCE, Router } from "@/router/router";
-import { Config } from "@/types/config";
+import type { Config } from "@/types/config";
 
 test("Router constructor - should initialize with valid config", () => {
 	const config: Config = {
