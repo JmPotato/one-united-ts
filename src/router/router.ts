@@ -1,6 +1,6 @@
 import { createParser } from "eventsource-parser";
 
-import type { CompletionChunk, CompletionResponse } from "@/types/completaion";
+import type { CompletionChunk, CompletionResponse } from "@/types/completion";
 import type {
 	ResponsesResponse,
 	ResponsesStreamEvent,

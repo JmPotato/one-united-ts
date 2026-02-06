@@ -22,15 +22,17 @@ bun run typecheck          # Type check all source files
 ```
 src/
 ├── app.ts                 # Entry point, Elysia routes
-├── global.ts              # SQLite storage, router singleton
+├── store.ts               # SQLite storage, router singleton
 ├── router/
 │   ├── router.ts          # Core routing logic
 │   └── router.test.ts     # Router tests
 └── types/
     ├── config.ts          # Config types and parsing
     ├── config.test.ts     # Config tests
-    ├── completaion.ts     # Chat Completions API types (note: typo is intentional)
+    ├── completion.ts      # Chat Completions API types
     └── responses.ts       # Responses API types
+└── views/
+    └── Dashboard.tsx      # HTML dashboard UI (JSX with @kitajs/html)
 ```
 
 ## Technology Stack
@@ -155,6 +157,7 @@ All checks must pass before merging to `main`.
 - `ONE_API_KEY` - API key for authentication (optional)
 - `PORT` - Server port (default: 5299)
 - `HOSTNAME` - Server hostname (default: 127.0.0.1)
+- `DATABASE_PATH` - SQLite path (default: kv.db)
 
 ## Key Patterns
 
@@ -168,8 +171,28 @@ Models can be routed using `model@@provider` syntax:
 
 ### Latency-Based Load Balancing
 
-- 80% requests go to fastest provider
-- 20% random for load distribution (`RANDOM_PROVIDER_CHANCE`)
+- 20% chance to pick from unknown-latency providers when available
+- If all providers have known latency, 20% chance to use weighted random (favor lower latency)
+- Otherwise select the fastest provider (`RANDOM_PROVIDER_CHANCE`)
+
+### Configuration
+
+Providers and routing rules are configured via YAML/JSON POST to `/config`.
+
+```yaml
+providers:
+  - name: "Display Name"
+    identifier: "unique-id"
+    endpoint: "https://api.example.com"
+    api_key: "$ENV_VAR"
+    models: ["model-1"]
+
+rules:
+  - model: "user-facing-model"
+    providers:
+      - identifier: "provider-id"
+        models: ["backend-model"]
+```
 
 ### Deprecated Field Migration
 
