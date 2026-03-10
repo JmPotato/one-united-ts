@@ -74,6 +74,9 @@ rules:
       - identifier: github-models
         models:
           - gpt-4o
+        extra_fields:               # Optional: custom fields injected into forwarded requests
+          thinking:
+            type: "disabled"
 ```
 
 ### Applying Configuration

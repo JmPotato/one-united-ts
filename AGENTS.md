@@ -192,7 +192,14 @@ rules:
     providers:
       - identifier: "provider-id"
         models: ["backend-model"]
+        extra_fields:               # Optional: injected into forwarded request body
+          thinking:
+            type: "disabled"
 ```
+
+### Extra Fields Injection
+
+Per-provider-model `extra_fields` are injected into forwarded requests via `Object.assign`. Operator config overrides user input, but cannot overwrite the routed `model` field.
 
 ### Deprecated Field Migration
 

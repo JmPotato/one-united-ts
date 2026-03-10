@@ -305,6 +305,16 @@ export class Router {
 		}
 	}
 
+	private getExtraFields(
+		sourceModel: Model,
+		providerId: Identifier,
+	): Record<string, unknown> | undefined {
+		const rule = this.rules.get(sourceModel);
+		if (!rule) return undefined;
+		const pm = rule.providers.find((p) => p.identifier === providerId);
+		return pm?.extra_fields;
+	}
+
 	private resolveTargetModel(model: Model): [Model, Identifier, Provider] {
 		let [targetModel, providerId] = this.tryParseTargetModel(model);
 		if (!providerId) {
@@ -492,6 +502,10 @@ export class Router {
 
 		const url = this.buildForwardUrl(provider, provider.path);
 		const headers = this.buildForwardHeaders(request, provider);
+		const extraFields = this.getExtraFields(sourceModel, providerId);
+		if (extraFields) {
+			Object.assign(body, extraFields);
+		}
 		body.model = targetModel;
 
 		console.info(
@@ -546,6 +560,10 @@ export class Router {
 		const responsesPath = provider.responses_path || DEFAULT_RESPONSES_PATH;
 		const url = this.buildForwardUrl(provider, responsesPath);
 		const headers = this.buildForwardHeaders(request, provider);
+		const extraFields = this.getExtraFields(sourceModel, providerId);
+		if (extraFields) {
+			Object.assign(body, extraFields);
+		}
 		body.model = targetModel;
 
 		console.info(

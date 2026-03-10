@@ -10,6 +10,7 @@ export type Identifier = string;
 export interface ProviderModel {
 	identifier: Identifier;
 	models: Model[];
+	extra_fields?: Record<string, unknown>;
 }
 
 export interface Rule {
@@ -54,6 +55,18 @@ export function buildConfig(yamlContent: string): Config {
 				throw new Error(
 					`Rule ${index} must have at least one provider defined`,
 				);
+			}
+			for (const pm of rule.providers) {
+				if (
+					pm.extra_fields !== undefined &&
+					(typeof pm.extra_fields !== "object" ||
+						pm.extra_fields === null ||
+						Array.isArray(pm.extra_fields))
+				) {
+					throw new Error(
+						`Rule ${index} provider ${pm.identifier} has invalid extra_fields: must be a plain object`,
+					);
+				}
 			}
 		});
 

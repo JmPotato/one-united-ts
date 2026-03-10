@@ -3,6 +3,81 @@ import { expect, test } from "bun:test";
 import { RANDOM_PROVIDER_CHANCE, Router } from "@/router/router";
 import type { Config } from "@/types/config";
 
+// Helper to create a minimal config with extra_fields support
+function createExtraFieldsConfig(
+	extraFields?: Record<string, unknown>,
+): Config {
+	return {
+		providers: [
+			{
+				name: "TestProvider",
+				identifier: "test-provider",
+				endpoint: "https://test.example.com",
+				path: "/v1/chat/completions",
+				responses_path: "/v1/responses",
+				api_key: "test-key",
+				models: ["backend-model"],
+			},
+		],
+		rules: [
+			{
+				model: "alias-model",
+				providers: [
+					{
+						identifier: "test-provider",
+						models: ["backend-model"],
+						...(extraFields !== undefined && {
+							extra_fields: extraFields,
+						}),
+					},
+				],
+			},
+		],
+	};
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: test helper
+function fakeCompletionResponse(): any {
+	return {
+		id: "chatcmpl-test",
+		object: "chat.completion",
+		choices: [
+			{
+				message: { role: "assistant", content: "hello" },
+				finish_reason: "stop",
+			},
+		],
+		usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+	};
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: test helper
+function fakeResponsesResponse(): any {
+	return {
+		id: "resp-test",
+		object: "response",
+		status: "completed",
+		output: [],
+		output_text: "hello",
+		usage: {
+			total_tokens: 10,
+			input_tokens: 5,
+			output_tokens: 5,
+		},
+	};
+}
+
+function makeRequest(model: string, path = "/v1/chat/completions"): Request {
+	return new Request(`http://localhost${path}`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			model,
+			messages: [{ role: "user", content: "hi" }],
+		}),
+	});
+}
+
 test("Router constructor - should initialize with valid config", () => {
 	const config: Config = {
 		rules: [
@@ -331,4 +406,141 @@ test("Router pickProviderModel - should prefer faster providers based on latency
 
 	const expectedPickCount = sampleNumber * (1 - 1.5 * RANDOM_PROVIDER_CHANCE);
 	expect(fastCount >= expectedPickCount).toBe(true);
+});
+
+// --- extra_fields tests ---
+
+const originalFetch = globalThis.fetch;
+
+// biome-ignore lint/suspicious/noExplicitAny: captures forwarded body in tests
+let capturedBody: any;
+
+function mockFetch(fakeResponse: unknown): void {
+	// biome-ignore lint/suspicious/noExplicitAny: mock fetch signature
+	(globalThis as any).fetch = async (_url: any, init: any) => {
+		capturedBody = JSON.parse(init.body);
+		return new Response(JSON.stringify(fakeResponse), { status: 200 });
+	};
+}
+
+function restoreFetch(): void {
+	globalThis.fetch = originalFetch;
+	capturedBody = undefined;
+}
+
+test("route - should inject extra_fields into forwarded request body", async () => {
+	const config = createExtraFieldsConfig({
+		thinking: { type: "disabled" },
+	});
+	const router = new Router(config);
+	mockFetch(fakeCompletionResponse());
+
+	try {
+		await router.route(makeRequest("alias-model"));
+		expect(capturedBody.model).toBe("backend-model");
+		expect(capturedBody.thinking).toEqual({ type: "disabled" });
+	} finally {
+		restoreFetch();
+	}
+});
+
+test("route - should not inject extra_fields when none are defined", async () => {
+	const config = createExtraFieldsConfig();
+	const router = new Router(config);
+	mockFetch(fakeCompletionResponse());
+
+	try {
+		await router.route(makeRequest("alias-model"));
+		expect(capturedBody.model).toBe("backend-model");
+		expect(capturedBody.thinking).toBeUndefined();
+	} finally {
+		restoreFetch();
+	}
+});
+
+test("route - should not inject extra_fields when using model@@provider override", async () => {
+	const config = createExtraFieldsConfig({
+		thinking: { type: "disabled" },
+	});
+	const router = new Router(config);
+	mockFetch(fakeCompletionResponse());
+
+	try {
+		await router.route(makeRequest("backend-model@@test-provider"));
+		expect(capturedBody.model).toBe("backend-model");
+		expect(capturedBody.thinking).toBeUndefined();
+	} finally {
+		restoreFetch();
+	}
+});
+
+test("routeResponses - should inject extra_fields into forwarded request body", async () => {
+	const config = createExtraFieldsConfig({
+		thinking: { type: "disabled" },
+	});
+	const router = new Router(config);
+	mockFetch(fakeResponsesResponse());
+
+	try {
+		await router.routeResponses(makeRequest("alias-model", "/v1/responses"));
+		expect(capturedBody.model).toBe("backend-model");
+		expect(capturedBody.thinking).toEqual({ type: "disabled" });
+	} finally {
+		restoreFetch();
+	}
+});
+
+test("route - extra_fields should override user-provided body fields", async () => {
+	const config = createExtraFieldsConfig({
+		temperature: 0.5,
+	});
+	const router = new Router(config);
+	mockFetch(fakeCompletionResponse());
+
+	try {
+		const request = new Request("http://localhost/v1/chat/completions", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				model: "alias-model",
+				messages: [{ role: "user", content: "hi" }],
+				temperature: 0.9,
+			}),
+		});
+		await router.route(request);
+		// extra_fields overwrites — this is the expected Object.assign behavior
+		expect(capturedBody.temperature).toBe(0.5);
+	} finally {
+		restoreFetch();
+	}
+});
+
+test("route - extra_fields cannot overwrite the routed model", async () => {
+	const config = createExtraFieldsConfig({
+		model: "wrong-model",
+	});
+	const router = new Router(config);
+	mockFetch(fakeCompletionResponse());
+
+	try {
+		await router.route(makeRequest("alias-model"));
+		expect(capturedBody.model).toBe("backend-model");
+	} finally {
+		restoreFetch();
+	}
+});
+
+test("routeResponses - extra_fields cannot overwrite the routed model", async () => {
+	const config = createExtraFieldsConfig({
+		model: "wrong-model",
+	});
+	const router = new Router(config);
+	mockFetch(fakeResponsesResponse());
+
+	try {
+		await router.routeResponses(makeRequest("alias-model", "/v1/responses"));
+		expect(capturedBody.model).toBe("backend-model");
+	} finally {
+		restoreFetch();
+	}
 });

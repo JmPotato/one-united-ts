@@ -43,6 +43,7 @@ Client → Elysia (auth) → Router (provider selection) → Upstream LLM → Re
 - **Provider override syntax**: `model@@provider` (e.g., `gpt-4@@openrouter`)
 - **Latency-based selection**: 20% chance to pick from unknown-latency providers when available; if all known, 20% chance to use weighted random (favor lower latency); otherwise select fastest (`RANDOM_PROVIDER_CHANCE`)
 - **Deprecated field migration**: `max_tokens` → `max_completion_tokens`, `user` → `safety_identifier` + `prompt_cache_key`, `functions` → `tools`, `function_call` → `tool_choice`
+- **Extra fields injection**: `extra_fields` on rule providers injects custom fields into forwarded requests (operator config overrides user input; cannot overwrite `model`)
 - **Streaming**: Server-Sent Events via eventsource-parser
 
 ### Configuration
@@ -62,6 +63,9 @@ rules:
     providers:
       - identifier: "provider-id"
         models: ["backend-model"]
+        extra_fields:               # Optional: injected into forwarded request body
+          thinking:
+            type: "disabled"
 ```
 
 ## Code Style
