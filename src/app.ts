@@ -3,8 +3,13 @@ import { html } from "@elysiajs/html";
 import pc from "picocolors";
 
 import { getConfig, getRouter, setConfig } from "@/store";
-import { buildConfig, type Config } from "@/types/config";
-import { Dashboard } from "@/views/Dashboard";
+import { Router } from "@/router/router";
+import { buildConfig, type Config, yamlFormat } from "@/types/config";
+import { DashboardPage } from "@/views/dashboard";
+import { ModelsPage } from "@/views/models";
+import { ProvidersPage } from "@/views/providers";
+import { ConfigEditorPage } from "@/views/config-editor";
+import { PlaygroundPage } from "@/views/playground";
 
 const ONE_API_KEY = Bun.env.ONE_API_KEY;
 const PORT = parseInt(Bun.env.PORT || "5299", 10);
@@ -28,11 +33,14 @@ function errorResponse(error: unknown, status = 500): Response {
 
 const app = new Elysia()
 	.use(html())
-	.get("/", () => Dashboard())
+	.get("/", () => DashboardPage())
+	.get("/ui/models", () => ModelsPage())
+	.get("/ui/providers", () => ProvidersPage())
+	.get("/ui/config", () => ConfigEditorPage())
+	.get("/ui/playground", () => PlaygroundPage())
 	.onBeforeHandle(({ request, set }) => {
 		const pathname = new URL(request.url).pathname;
-		// Skip auth for dashboard
-		if (pathname === "/") return;
+		if (pathname === "/" || pathname.startsWith("/ui/")) return;
 
 		const apiKey = request.headers.get("Authorization");
 		if (ONE_API_KEY && apiKey !== `Bearer ${ONE_API_KEY}`) {
@@ -49,7 +57,7 @@ const app = new Elysia()
 
 			const accept = request.headers.get("Accept") || APPLICATION_JSON;
 			if (accept.includes(APPLICATION_YAML)) {
-				return new Response(Bun.YAML.stringify(config), {
+				return new Response(yamlFormat(config), {
 					headers: { [CONTENT_TYPE]: APPLICATION_YAML },
 				});
 			}
@@ -76,10 +84,56 @@ const app = new Elysia()
 			return errorResponse(error);
 		}
 	})
+	.post("/config/validate", async ({ request }) => {
+		try {
+			const contentType = request.headers.get("content-type");
+			let config: Config;
+			if (contentType === APPLICATION_JSON) {
+				config = await request.json();
+			} else if (contentType === APPLICATION_YAML) {
+				config = buildConfig(await request.text());
+			} else {
+				return jsonResponse({ error: "Unsupported media type" }, 415);
+			}
+			// Validate by constructing a Router (throws on invalid config)
+			new Router(config);
+			return {
+				valid: true,
+				providers_count: config.providers.length,
+				rules_count: config.rules.length,
+			};
+		} catch (error: unknown) {
+			const message =
+				error instanceof Error ? error.message : "An unknown error occurred";
+			return { valid: false, error: message };
+		}
+	})
+	.post("/config/format", async ({ request }) => {
+		try {
+			const text = await request.text();
+			const parsed = Bun.YAML.parse(text);
+			if (!parsed || typeof parsed !== "object") {
+				return jsonResponse({ error: "Invalid YAML" }, 400);
+			}
+			return new Response(yamlFormat(parsed), {
+				headers: { [CONTENT_TYPE]: APPLICATION_YAML },
+			});
+		} catch (error: unknown) {
+			return errorResponse(error, 400);
+		}
+	})
 	.get("/stats", async () => {
 		try {
 			const router = await getRouter();
 			return await router.getStats();
+		} catch (error: unknown) {
+			return errorResponse(error);
+		}
+	})
+	.get("/stats/routing", async () => {
+		try {
+			const router = await getRouter();
+			return await router.getRoutingInfo();
 		} catch (error: unknown) {
 			return errorResponse(error);
 		}

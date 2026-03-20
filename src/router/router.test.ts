@@ -544,3 +544,97 @@ test("routeResponses - extra_fields cannot overwrite the routed model", async ()
 		restoreFetch();
 	}
 });
+
+// --- getRoutingInfo tests ---
+
+test("getRoutingInfo - should return models with provider mappings and latency", async () => {
+	const config: Config = {
+		providers: [
+			{
+				name: "OpenAI",
+				identifier: "openai",
+				endpoint: "https://api.openai.com",
+				path: "/v1/chat/completions",
+				api_key: "test-key",
+				models: ["gpt-4", "gpt-3.5-turbo"],
+			},
+			{
+				name: "Anthropic",
+				identifier: "anthropic",
+				endpoint: "https://api.anthropic.com",
+				path: "/v1/messages",
+				responses_path: "/v1/responses",
+				api_key: "",
+				models: ["claude-3"],
+			},
+		],
+		rules: [
+			{
+				model: "smart",
+				providers: [
+					{
+						identifier: "openai",
+						models: ["gpt-4"],
+						extra_fields: { thinking: { type: "disabled" } },
+					},
+					{
+						identifier: "anthropic",
+						models: ["claude-3"],
+					},
+				],
+			},
+			{
+				model: "fast",
+				providers: [
+					{
+						identifier: "openai",
+						models: ["gpt-3.5-turbo"],
+					},
+				],
+			},
+		],
+	};
+
+	const router = new Router(config);
+	router.updateLatency("gpt-4", "openai", 150);
+
+	const info = await router.getRoutingInfo();
+
+	// Check models
+	expect(info.models).toHaveLength(2);
+
+	const smartModel = info.models.find((m) => m.model === "smart");
+	expect(smartModel).toBeDefined();
+	expect(smartModel?.providers).toHaveLength(2);
+
+	const openaiProvider = smartModel?.providers.find(
+		(p) => p.identifier === "openai",
+	);
+	expect(openaiProvider?.name).toBe("OpenAI");
+	expect(openaiProvider?.models).toEqual(["gpt-4"]);
+	expect(openaiProvider?.latency["gpt-4"]).toBe(150);
+	expect(openaiProvider?.extra_fields).toEqual({
+		thinking: { type: "disabled" },
+	});
+
+	const anthropicProvider = smartModel?.providers.find(
+		(p) => p.identifier === "anthropic",
+	);
+	expect(anthropicProvider?.latency["claude-3"]).toBeNull();
+	expect(anthropicProvider?.extra_fields).toBeUndefined();
+
+	// Check providers
+	expect(info.providers).toHaveLength(2);
+
+	const openaiInfo = info.providers.find((p) => p.identifier === "openai");
+	expect(openaiInfo?.has_api_key).toBe(true);
+	expect(openaiInfo?.endpoint).toBe("https://api.openai.com");
+
+	const anthropicInfo = info.providers.find(
+		(p) => p.identifier === "anthropic",
+	);
+	expect(anthropicInfo?.has_api_key).toBe(false);
+
+	// Check config_hash
+	expect(info.config_hash).toBeTruthy();
+});

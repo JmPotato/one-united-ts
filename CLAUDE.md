@@ -30,13 +30,49 @@ CI runs in order: `fmt:check` → `lint` → `test`. All must pass before mergin
 - **src/router/router.ts** - Core routing engine: provider selection, latency tracking, request forwarding, streaming support
 - **src/store.ts** - SQLite persistence layer (WAL mode), lazy-loaded router singleton
 - **src/types/** - TypeScript interfaces for OpenAI API types and gateway configuration
-- **src/views/Dashboard.tsx** - HTML dashboard UI for monitoring (JSX with @kitajs/html)
+- **src/views/layout.tsx** - Shared layout component: HTML shell, nav, auth widget, design system CSS/JS (@kitajs/html)
+- **src/views/dashboard.tsx** - Latency monitoring dashboard
+- **src/views/models.tsx** - Models & routing visualization
+- **src/views/providers.tsx** - Provider fleet status
+- **src/views/config-editor.tsx** - YAML configuration editor with validate/format/deploy
+- **src/views/playground.tsx** - API playground with streaming support
 
 ### Request Flow
 
 ```
 Client → Elysia (auth) → Router (provider selection) → Upstream LLM → Response Processing → Client
 ```
+
+### Frontend UI
+
+Server-rendered JSX pages via @kitajs/html with client-side vanilla JS. All pages share a Layout component (`src/views/layout.tsx`) that provides:
+- Dark theme design system (CSS variables)
+- Sticky header with navigation and auth widget
+- Shared auth logic (localStorage API key, `apiFetch()`, `onAuthenticated()` callback pattern)
+
+| Route | Page | Data Source |
+|-------|------|-------------|
+| `/` | Latency Dashboard | `GET /stats` (3s polling) |
+| `/ui/models` | Models & Routing | `GET /stats/routing` (10s polling) |
+| `/ui/providers` | Provider Fleet | `GET /stats/routing` (10s polling) |
+| `/ui/config` | Config Editor | `GET /config`, `POST /config/validate`, `POST /config/format` |
+| `/ui/playground` | API Console | `POST /v1/chat/completions`, `POST /v1/responses` |
+
+### API Endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/` | No | Latency dashboard HTML |
+| GET | `/ui/*` | No | UI pages (models, providers, config, playground) |
+| GET | `/config` | Yes | Get current config (JSON or YAML via Accept header) |
+| POST | `/config` | Yes | Apply new config (JSON or YAML) |
+| POST | `/config/validate` | Yes | Validate config without applying |
+| POST | `/config/format` | Yes | Format YAML config with canonical indentation |
+| GET | `/stats` | Yes | Latency stats and config hash |
+| GET | `/stats/routing` | Yes | Full routing info: models, providers, latency map |
+| GET | `/v1/models` | Yes | List available models (OpenAI-compatible) |
+| POST | `/v1/chat/completions` | Yes | Chat completions proxy (streaming supported) |
+| POST | `/v1/responses` | Yes | Responses API proxy (streaming supported) |
 
 ### Key Routing Features
 
@@ -73,17 +109,17 @@ rules:
 ### Imports
 
 1. External packages first (elysia, yaml, picocolors, etc.)
-2. Local imports with `@/` alias (maps to `./src/`), always include `.ts` extension
+2. Local imports with `@/` alias (maps to `./src/`), no file extension
 
 ```typescript
 import { Elysia } from "elysia";
 import pc from "picocolors";
-import { Router } from "@/router/router.ts";
+import { Router } from "@/router/router";
 ```
 
 ### Formatting & Naming
 
-- Indent: 4 spaces (Biome). Run `bun run fmt` before committing.
+- Indent: tab-width 4 (Biome). Run `bun run fmt` before committing.
 - **Files**: lowercase with hyphens (`router.ts`, `config.test.ts`)
 - **Classes/Interfaces/Types**: PascalCase (`Router`, `Provider`)
 - **Functions**: camelCase (`buildConfig`, `getRouter`)

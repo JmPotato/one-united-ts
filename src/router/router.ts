@@ -624,4 +624,62 @@ export class Router {
 			latency: Object.fromEntries(sortedLatency.entries()),
 		};
 	}
+
+	public async getRoutingInfo(): Promise<{
+		models: Array<{
+			model: Model;
+			providers: Array<{
+				identifier: Identifier;
+				name: string;
+				models: Model[];
+				latency: Record<string, number | null>;
+				extra_fields?: Record<string, unknown>;
+			}>;
+		}>;
+		providers: Array<{
+			identifier: Identifier;
+			name: string;
+			endpoint: string;
+			models: Model[];
+			path: string;
+			responses_path?: string;
+			has_api_key: boolean;
+		}>;
+		config_hash: string;
+	}> {
+		const models = Array.from(this.rules.entries()).map(([model, rule]) => ({
+			model,
+			providers: rule.providers.map((rp) => {
+				const provider = this.providers.get(rp.identifier);
+				const latency: Record<string, number | null> = {};
+				for (const m of rp.models) {
+					const key = formatModelProvider(m, rp.identifier);
+					latency[m] = this.latency.get(key) ?? null;
+				}
+				return {
+					identifier: rp.identifier,
+					name: provider?.name ?? rp.identifier,
+					models: rp.models,
+					latency,
+					...(rp.extra_fields && { extra_fields: rp.extra_fields }),
+				};
+			}),
+		}));
+
+		const providers = Array.from(this.providers.values()).map((p) => ({
+			identifier: p.identifier,
+			name: p.name,
+			endpoint: p.endpoint,
+			models: p.models,
+			path: p.path,
+			...(p.responses_path && { responses_path: p.responses_path }),
+			has_api_key: !!p.api_key,
+		}));
+
+		return {
+			models,
+			providers,
+			config_hash: await hashConfig(this.config),
+		};
+	}
 }

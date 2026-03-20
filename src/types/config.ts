@@ -113,3 +113,81 @@ export function buildConfig(yamlContent: string): Config {
 export async function hashConfig(config: Config): Promise<string> {
 	return await blake3(JSON.stringify(config));
 }
+
+export function yamlScalar(value: string): string {
+	if (
+		value === "" ||
+		value.includes("\n") ||
+		value.includes(": ") ||
+		value.includes("#") ||
+		/^[{["']/.test(value)
+	) {
+		return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n")}"`;
+	}
+	if (
+		/^[\d.eE+-]/.test(value) ||
+		/^(true|false|null|yes|no|on|off)$/i.test(value) ||
+		value.includes(",")
+	) {
+		return `"${value}"`;
+	}
+	return value;
+}
+
+export function isScalar(v: unknown): boolean {
+	return v === null || v === undefined || typeof v !== "object";
+}
+
+export function yamlFormat(value: unknown, indent = 0): string {
+	const pad = "  ".repeat(indent);
+
+	if (value === null || value === undefined) return `${pad}null\n`;
+	if (typeof value === "boolean") return `${pad}${value}\n`;
+	if (typeof value === "number") return `${pad}${value}\n`;
+	if (typeof value === "string") return `${pad}${yamlScalar(value)}\n`;
+
+	if (Array.isArray(value)) {
+		if (value.length === 0) return `${pad}[]\n`;
+		let out = "";
+		for (const item of value) {
+			if (typeof item === "object" && item !== null && !Array.isArray(item)) {
+				const entries = Object.entries(item);
+				if (entries.length > 0) {
+					const [fk, fv] = entries[0];
+					if (isScalar(fv)) {
+						out += `${pad}- ${fk}: ${yamlFormat(fv, 0).trim()}\n`;
+					} else {
+						out += `${pad}- ${fk}:\n${yamlFormat(fv, indent + 2)}`;
+					}
+					for (let i = 1; i < entries.length; i++) {
+						const [k, v] = entries[i];
+						if (isScalar(v)) {
+							out += `${pad}  ${k}: ${yamlFormat(v, 0).trim()}\n`;
+						} else {
+							out += `${pad}  ${k}:\n${yamlFormat(v, indent + 2)}`;
+						}
+					}
+					continue;
+				}
+			}
+			out += `${pad}- ${yamlFormat(item, 0).trim()}\n`;
+		}
+		return out;
+	}
+
+	if (typeof value === "object") {
+		const entries = Object.entries(value as Record<string, unknown>);
+		if (entries.length === 0) return `${pad}{}\n`;
+		let out = "";
+		for (const [key, val] of entries) {
+			if (isScalar(val)) {
+				out += `${pad}${key}: ${yamlFormat(val, 0).trim()}\n`;
+			} else {
+				out += `${pad}${key}:\n${yamlFormat(val, indent + 1)}`;
+			}
+		}
+		return out;
+	}
+
+	return `${pad}${value}\n`;
+}
