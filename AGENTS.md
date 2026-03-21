@@ -12,6 +12,7 @@ bun run lint               # Run linter (Biome)
 bun run fmt                # Format code (Biome)
 bun run fmt:check          # Check formatting
 bun test                   # Run all tests
+bun test src/app.test.ts                                  # Run UI SSR route tests
 bun test src/router/router.test.ts                        # Run single test file
 bun test --filter="Router constructor"                    # Run tests matching pattern
 bun run typecheck          # Type check all source files
@@ -21,18 +22,24 @@ bun run typecheck          # Type check all source files
 
 ```
 src/
-├── app.ts                 # Entry point, Elysia routes
-├── store.ts               # SQLite storage, router singleton
+├── app.ts                 # App factory and HTTP entry point, Elysia routes
+├── app.test.ts            # SSR UI route tests
+├── store.ts               # Lazy-initialized SQLite storage, router singleton
 ├── router/
 │   ├── router.ts          # Core routing logic
 │   └── router.test.ts     # Router tests
-└── types/
+├── types/
     ├── config.ts          # Config types and parsing
     ├── config.test.ts     # Config tests
     ├── completion.ts      # Chat Completions API types
     └── responses.ts       # Responses API types
 └── views/
-    └── Dashboard.tsx      # HTML dashboard UI (JSX with @kitajs/html)
+    ├── layout.tsx         # Shared HTML shell, design tokens, auth script
+    ├── dashboard.tsx      # Latency dashboard UI
+    ├── models.tsx         # Routing overview UI
+    ├── providers.tsx      # Provider fleet UI
+    ├── config-editor.tsx  # YAML config editor UI
+    └── playground.tsx     # API console UI
 ```
 
 ## Technology Stack
@@ -118,6 +125,7 @@ try {
 - Test files: `*.test.ts` next to source files
 - Use `bun:test` with descriptive names
 - Import assertions from `bun:test`
+- Keep SSR route tests anchored to stable page structure, not theme-specific implementation details
 
 ```typescript
 import { describe, expect, test } from "bun:test";

@@ -7,7 +7,9 @@ const pageStyles = `
 }
 
 .page-header {
-  margin-bottom: 40px;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 2px dashed var(--border-light);
 }
 
 .text-display {
@@ -20,19 +22,20 @@ const pageStyles = `
 }
 
 .last-updated-label {
-  font-size: 10px;
+  font-family: var(--font-mono);
+  font-size: 1rem;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.08em;
   color: var(--text-tertiary);
-  font-weight: 500;
 }
 
 .meta-bar {
   display: flex;
   gap: 24px;
   margin-bottom: 32px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-hairline);
+  padding: 14px 18px;
+  border: 1px dashed var(--border-light);
+  background: rgba(252, 250, 240, 0.65);
 }
 
 .meta-bar-item {
@@ -42,29 +45,30 @@ const pageStyles = `
 }
 
 .meta-bar-label {
-  font-size: 10px;
+  font-family: var(--font-mono);
+  font-size: 1rem;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.08em;
   color: var(--text-tertiary);
-  font-weight: 500;
 }
 
 .meta-bar-value {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 1rem;
   color: var(--text-secondary);
 }
 
 .grid {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
 }
 
 .latency-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 24px;
 }
 
 .model-info {
@@ -77,8 +81,8 @@ const pageStyles = `
 
 .model {
   font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--gold-base);
+  font-size: 1.15rem;
+  color: var(--text-primary);
   letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
@@ -86,7 +90,7 @@ const pageStyles = `
 }
 
 .provider {
-  font-size: 11px;
+  font-size: 1rem;
   color: var(--text-secondary);
   letter-spacing: 0.04em;
 }
@@ -97,7 +101,7 @@ const pageStyles = `
 }
 
 .bar-bg {
-  height: 2px;
+  height: 3px;
   background: var(--border-hairline);
   overflow: hidden;
 }
@@ -108,8 +112,8 @@ const pageStyles = `
 }
 
 .latency-value {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-mono);
+  font-size: 2.4rem;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
@@ -119,7 +123,7 @@ const pageStyles = `
 }
 
 .latency-unit {
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: var(--text-tertiary);
   margin-left: 2px;
 }

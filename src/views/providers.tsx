@@ -11,10 +11,11 @@ const pageStyles = `
 }
 
 .page-subtitle {
-    font-size: 12px;
+    font-family: var(--font-mono);
+    font-size: 1rem;
     color: var(--text-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.08em;
     margin-bottom: 32px;
 }
 
@@ -29,11 +30,11 @@ const pageStyles = `
 
 .sort-select {
     background: var(--bg-elevated);
-    border: 1px solid var(--border-hairline);
+    border: 1px solid var(--border-light);
     padding: 8px 32px 8px 14px;
-    font-size: 12px;
+    font-size: 1rem;
     color: var(--text-primary);
-    font-family: var(--font-ui);
+    font-family: var(--font-mono);
     outline: none;
     cursor: pointer;
     transition: border-color 0.2s ease;
@@ -58,7 +59,7 @@ const pageStyles = `
 .provider-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+    gap: 24px;
 }
 
 .provider-card {
@@ -67,7 +68,7 @@ const pageStyles = `
 
 .provider-card:hover {
     border-color: var(--border-light);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
 }
 
 .card-header {
@@ -97,7 +98,7 @@ const pageStyles = `
 }
 
 .provider-id {
-    font-size: 11px;
+    font-size: 1rem;
     font-family: var(--font-mono);
     color: var(--text-tertiary);
     margin-top: 2px;
@@ -118,7 +119,7 @@ const pageStyles = `
 
 .meta-item .label {
     display: block;
-    font-size: 9px;
+    font-size: 0.94rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
     color: var(--text-tertiary);
@@ -126,7 +127,7 @@ const pageStyles = `
 }
 
 .meta-item .value {
-    font-size: 13px;
+    font-size: 1rem;
     font-family: var(--font-mono);
     color: var(--text-primary);
     font-weight: 500;
@@ -145,7 +146,7 @@ const pageStyles = `
 }
 
 .api-key-label {
-    font-size: 9px;
+    font-size: 0.94rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
     color: var(--text-tertiary);
@@ -160,7 +161,7 @@ const pageStyles = `
     color: var(--text-secondary);
     padding: 6px 10px;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 1rem;
     letter-spacing: 0.08em;
     min-width: 0;
 }
@@ -180,31 +181,30 @@ const pageStyles = `
 
 .configure-btn {
     background: transparent;
-    color: var(--gold-base);
-    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    border: 1px solid var(--text-primary);
     padding: 6px 16px;
-    font-family: var(--font-ui);
-    font-size: 10px;
+    font-family: var(--font-mono);
+    font-size: 1rem;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.08em;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
 }
 
 .configure-btn:hover {
-    border-color: var(--gold-base);
-    background: rgba(212, 180, 122, 0.05);
-    color: var(--gold-bright);
+    background: var(--text-primary);
+    color: var(--bg-deep);
 }
 
 .toggle-details {
     background: none;
     border: none;
     color: var(--text-tertiary);
-    font-size: 10px;
+    font-size: 0.78rem;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.14em;
     cursor: pointer;
     padding: 6px 0;
     transition: color 0.2s ease;
@@ -238,9 +238,9 @@ const pageStyles = `
 }
 
 .latency-heading {
-    font-size: 10px;
+    font-size: 0.78rem;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.16em;
     color: var(--text-secondary);
     margin-bottom: 8px;
     font-weight: 500;
@@ -267,15 +267,15 @@ const pageStyles = `
 }
 
 .detail-key {
-    font-size: 10px;
+    font-size: 0.78rem;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.16em;
     color: var(--text-tertiary);
 }
 
 .detail-val {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 0.82rem;
     color: var(--text-secondary);
     word-break: break-all;
     text-align: right;
@@ -298,7 +298,7 @@ const pageStyles = `
 
 .model-name {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 0.82rem;
     color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -309,7 +309,7 @@ const pageStyles = `
 
 .model-latency {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 0.82rem;
     font-weight: 500;
     flex-shrink: 0;
     margin-left: 12px;
@@ -330,6 +330,10 @@ const pageStyles = `
     flex-wrap: wrap;
     gap: 4px;
     margin-top: 8px;
+}
+
+.models-list .badge {
+    font-size: 0.82rem;
 }
 
 .details-section {

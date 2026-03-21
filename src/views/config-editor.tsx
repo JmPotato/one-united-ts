@@ -34,13 +34,17 @@ const pageStyles = `
 .editor-textarea {
     width: 100%;
     min-height: 600px;
-    background: #080504;
-    border: 1px solid var(--border-hairline);
+    background:
+        linear-gradient(transparent 30px, rgba(15, 15, 15, 0.06) 31px),
+        linear-gradient(90deg, rgba(224, 220, 207, 0.38), rgba(224, 220, 207, 0.1)),
+        var(--bg-surface);
+    background-size: 100% 31px, 100% 100%, auto;
+    border: 1px solid var(--border-light);
     padding: 24px;
-    color: var(--gold-base);
+    color: var(--text-primary);
     font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    line-height: 1.7;
+    font-size: 1.1rem;
+    line-height: 1.55;
     resize: vertical;
     outline: none;
     tab-size: 2;
@@ -48,11 +52,12 @@ const pageStyles = `
     overflow-wrap: normal;
     overflow-x: auto;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04);
 }
 
 .editor-textarea:focus {
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 1px rgba(212, 180, 122, 0.08);
+    box-shadow: 0 0 0 1px rgba(15, 15, 15, 0.08);
 }
 
 .editor-textarea::placeholder {
@@ -62,7 +67,7 @@ const pageStyles = `
 .feedback-bar {
     margin-top: 0.75rem;
     padding: 0.75rem 1rem;
-    font-size: 0.8125rem;
+    font-size: 0.95rem;
     font-family: var(--font-mono);
     display: none;
     line-height: 1.6;
@@ -70,16 +75,16 @@ const pageStyles = `
 
 .feedback-bar.valid {
     display: block;
-    background: rgba(141, 163, 114, 0.1);
+    background: rgba(102, 122, 84, 0.08);
     color: var(--accent-success);
-    border: 1px solid rgba(141, 163, 114, 0.25);
+    border: 1px solid rgba(102, 122, 84, 0.2);
 }
 
 .feedback-bar.invalid {
     display: block;
-    background: rgba(163, 91, 76, 0.1);
+    background: rgba(139, 0, 0, 0.05);
     color: var(--accent-error);
-    border: 1px solid rgba(163, 91, 76, 0.25);
+    border: 1px solid rgba(139, 0, 0, 0.18);
 }
 
 .feedback-bar .yaml-key {
@@ -104,21 +109,21 @@ const pageStyles = `
     align-items: center;
     gap: 0.75rem;
     margin-top: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 10px;
+    padding: 0.9rem 0 0;
+    font-size: 1rem;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.08em;
     color: var(--text-tertiary);
     font-family: var(--font-mono);
+    border-top: 1px dashed var(--border-light);
 }
 
 .hash-label {
-    font-family: var(--font-ui);
-    font-weight: 500;
+    font-family: var(--font-mono);
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.15em;
-    font-size: 10px;
+    letter-spacing: 0.08em;
+    font-size: 1rem;
 }
 
 .hash-value {
@@ -158,7 +163,7 @@ const pageStyles = `
     }
     .editor-textarea {
         min-height: 360px;
-        font-size: 0.75rem;
+        font-size: 0.95rem;
         padding: 16px;
     }
     .hash-indicator {

@@ -5,18 +5,23 @@ const pageStyles = `
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: 0;
-  height: calc(100vh - 64px - 96px);
+  flex: 1;
+  height: auto;
+  min-height: 0;
   min-height: 500px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.05);
 }
 
 /* ── Sidebar ── */
 .sidebar {
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-hairline);
+  background: rgba(252, 250, 240, 0.84);
+  border-right: 1px dashed var(--border-light);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding: 20px;
+  padding: 24px;
   gap: 16px;
 }
 
@@ -27,26 +32,26 @@ const pageStyles = `
 }
 
 .sidebar-label {
-  font-size: 10px;
+  font-family: var(--font-mono);
+  font-size: 1rem;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.08em;
   color: var(--text-tertiary);
-  font-weight: 500;
 }
 
 .sidebar .input,
 .sidebar select.input {
-  font-size: 12px;
+  font-size: 1rem;
   padding: 7px 12px;
 }
 
 .sidebar textarea.input {
-  font-size: 12px;
+  font-size: 1rem;
   padding: 7px 12px;
   resize: vertical;
   min-height: 64px;
   line-height: 1.5;
-  font-family: var(--font-ui);
+  font-family: var(--font-mono);
 }
 
 .sidebar select.input {
@@ -100,7 +105,7 @@ const pageStyles = `
 
 .temp-value {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 1rem;
   color: var(--gold-base);
   min-width: 24px;
   text-align: right;
@@ -115,7 +120,7 @@ const pageStyles = `
 }
 
 .toggle-label {
-  font-size: 12px;
+  font-size: 1rem;
   color: var(--text-secondary);
   cursor: pointer;
   user-select: none;
@@ -166,14 +171,14 @@ const pageStyles = `
 /* API type toggle buttons */
 .api-toggle {
   display: flex;
-  border: 1px solid var(--border-hairline);
+  border: 1px dashed var(--border-light);
   overflow: hidden;
 }
 
 .api-toggle-btn {
   flex: 1;
   padding: 6px 8px;
-  font-size: 10px;
+  font-size: 0.94rem;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -205,7 +210,7 @@ const pageStyles = `
 }
 
 .routing-info {
-  font-size: 10px;
+  font-size: 0.95rem;
   color: var(--text-tertiary);
   padding-top: 12px;
   border-top: 1px solid var(--border-hairline);
@@ -218,7 +223,7 @@ const pageStyles = `
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--bg-deep);
+  background: linear-gradient(180deg, rgba(252, 250, 240, 0.9), rgba(240, 237, 224, 0.7));
 }
 
 .chat-messages {
@@ -239,12 +244,12 @@ const pageStyles = `
   flex-direction: column;
   gap: 8px;
   color: var(--text-tertiary);
-  font-size: 13px;
+  font-size: 1rem;
 }
 
 .chat-empty-title {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 1.35rem;
   font-weight: 400;
   color: var(--text-secondary);
   letter-spacing: 0.04em;
@@ -267,33 +272,34 @@ const pageStyles = `
 }
 
 .msg-user .msg-bubble {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-light);
+  background: var(--text-primary);
+  border: 1px solid var(--text-primary);
   padding: 12px 16px;
-  color: var(--text-primary);
-  font-size: 13px;
+  color: var(--bg-deep);
+  font-size: 1rem;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .msg-assistant .msg-bubble {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.4);
   padding: 12px 16px;
   border: 1px solid var(--border-hairline);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 1rem;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.03);
 }
 
 .msg-model-label {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: 13px;
-  color: var(--gold-base);
-  letter-spacing: 0.02em;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
   padding-left: 4px;
 }
 
@@ -318,11 +324,11 @@ const pageStyles = `
   white-space: pre-wrap;
   word-break: break-word;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 1rem;
   line-height: 1.6;
   padding: 16px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-hairline);
+  background: rgba(252, 250, 240, 0.72);
+  border: 1px dashed var(--border-light);
   max-height: 60vh;
   overflow: auto;
 }
@@ -339,8 +345,8 @@ const pageStyles = `
   flex-wrap: wrap;
   gap: 16px;
   padding: 8px 16px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-hairline);
+  background: rgba(252, 250, 240, 0.55);
+  border: 1px dashed var(--border-light);
   margin-top: 8px;
 }
 
@@ -348,7 +354,7 @@ const pageStyles = `
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
+  font-size: 0.94rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-tertiary);
@@ -368,7 +374,7 @@ const pageStyles = `
 }
 
 .error-card-title {
-  font-size: 12px;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--accent-error);
   text-transform: uppercase;
@@ -377,7 +383,7 @@ const pageStyles = `
 }
 
 .error-card-body {
-  font-size: 12px;
+  font-size: 1rem;
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
@@ -392,7 +398,7 @@ const pageStyles = `
   align-items: center;
   gap: 6px;
   color: var(--text-tertiary);
-  font-size: 12px;
+  font-size: 0.95rem;
   padding: 12px 16px;
 }
 
@@ -418,17 +424,18 @@ const pageStyles = `
   gap: 12px;
   padding: 16px 32px 20px;
   background: var(--bg-surface);
-  border-top: 1px solid var(--border-hairline);
+  border-top: 1px dashed var(--border-light);
 }
 
 .chat-input-area textarea {
   flex: 1;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-hairline);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-light);
   color: var(--text-primary);
-  padding: 10px 14px;
-  font-family: var(--font-ui);
-  font-size: 13px;
+  padding: 10px 0;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
   line-height: 1.5;
   resize: none;
   min-height: 42px;
@@ -438,7 +445,7 @@ const pageStyles = `
 }
 
 .chat-input-area textarea:focus {
-  border-color: var(--border-focus);
+  border-bottom-color: var(--border-focus);
 }
 
 .chat-input-area textarea::placeholder {
@@ -447,13 +454,13 @@ const pageStyles = `
 
 .send-btn {
   padding: 10px 24px;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 1rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   color: var(--bg-deep);
-  background: var(--gold-dim);
-  border: 1px solid var(--gold-base);
+  background: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  font-family: var(--font-mono);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -461,7 +468,8 @@ const pageStyles = `
 }
 
 .send-btn:hover {
-  background: var(--gold-muted);
+  background: transparent;
+  color: var(--text-primary);
 }
 
 .send-btn:disabled {
@@ -486,12 +494,12 @@ const pageStyles = `
 
 .raw-json-area textarea {
   width: 100%;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-hairline);
+  background: rgba(252, 250, 240, 0.72);
+  border: 1px dashed var(--border-light);
   color: var(--text-primary);
   padding: 8px 10px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 1rem;
   line-height: 1.5;
   resize: vertical;
   min-height: 200px;
@@ -509,7 +517,7 @@ const pageStyles = `
   align-items: center;
   justify-content: center;
   color: var(--text-tertiary);
-  font-size: 12px;
+  font-size: 0.98rem;
   padding: 2rem;
   text-align: center;
 }
@@ -528,6 +536,7 @@ const pageStyles = `
 .main-content {
   padding: 0 !important;
   max-width: 100% !important;
+  display: flex;
 }
 
 @media (max-width: 768px) {
@@ -1075,7 +1084,6 @@ export function PlaygroundPage(): JSX.Element {
 									id="maxTokens"
 									min="1"
 									placeholder="Optional"
-									style="font-family:var(--font-mono);font-size:12px"
 								/>
 							</div>
 							<div class="sidebar-section" style="display:none">
@@ -1116,7 +1124,6 @@ export function PlaygroundPage(): JSX.Element {
 									id="maxOutputTokens"
 									min="1"
 									placeholder="Optional"
-									style="font-family:var(--font-mono);font-size:12px"
 								/>
 							</div>
 						</div>

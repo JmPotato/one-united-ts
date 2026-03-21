@@ -15,18 +15,12 @@ const pageStyles = `
   border: 1px solid var(--border-hairline);
   background: var(--bg-surface);
   position: relative;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04);
 }
 
 .models-table-wrap::before, .models-table-wrap::after {
-  content: '';
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border: 1px solid var(--gold-dim);
-  opacity: 0.5;
+  display: none;
 }
-.models-table-wrap::before { top: 4px; left: 4px; border-right: none; border-bottom: none; }
-.models-table-wrap::after { bottom: 4px; right: 4px; border-left: none; border-top: none; }
 
 .model-row {
   cursor: pointer;
@@ -34,30 +28,30 @@ const pageStyles = `
 }
 
 .model-row:hover td {
-  background: rgba(212, 180, 122, 0.04);
+  background: rgba(224, 220, 207, 0.22);
 }
 
 .model-name {
   font-family: var(--font-mono);
-  color: var(--gold-bright);
-  font-size: 13px;
+  color: var(--text-primary);
+  font-size: 1.1rem;
   font-weight: 500;
 }
 
 .provider-target {
-  font-size: 12px;
+  font-size: 0.98rem;
   color: var(--text-secondary);
 }
 
 .provider-target-id {
   font-family: var(--font-mono);
   color: var(--text-tertiary);
-  font-size: 11px;
+  font-size: 1rem;
 }
 
 .latency-cell {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 1rem;
   white-space: nowrap;
 }
 
@@ -75,7 +69,7 @@ const pageStyles = `
   text-align: right;
   width: 32px;
   color: var(--text-tertiary);
-  font-size: 10px;
+  font-size: 0.94rem;
   transition: transform 0.2s ease;
 }
 
@@ -125,12 +119,12 @@ const pageStyles = `
 
 .provider-detail-name {
   font-weight: 500;
-  font-size: 13px;
+  font-size: 1rem;
   color: var(--text-primary);
 }
 
 .provider-detail-id {
-  font-size: 11px;
+  font-size: 1rem;
   color: var(--text-tertiary);
   font-family: var(--font-mono);
 }
@@ -146,7 +140,7 @@ const pageStyles = `
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 12px;
+  font-size: 1rem;
 }
 
 .backend-model-label {
@@ -157,10 +151,10 @@ const pageStyles = `
 .routing-flow-block {
   margin-top: 8px;
   padding: 8px 12px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-hairline);
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border-light);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 1rem;
   color: var(--text-secondary);
 }
 
@@ -174,7 +168,7 @@ const pageStyles = `
 }
 
 .extra-fields-label {
-  font-size: 10px;
+  font-size: 0.94rem;
   color: var(--text-tertiary);
   font-weight: 500;
   text-transform: uppercase;
@@ -186,7 +180,7 @@ const pageStyles = `
   background: var(--bg-surface);
   border: 1px solid var(--border-hairline);
   padding: 8px 12px;
-  font-size: 11px;
+  font-size: 1rem;
   font-family: var(--font-mono);
   color: var(--text-secondary);
   white-space: pre-wrap;
@@ -200,18 +194,12 @@ const pageStyles = `
   padding: 24px;
   margin-top: 24px;
   position: relative;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04);
 }
 
 .info-panel::before, .info-panel::after {
-  content: '';
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border: 1px solid var(--gold-dim);
-  opacity: 0.5;
+  display: none;
 }
-.info-panel::before { top: 4px; left: 4px; border-right: none; border-bottom: none; }
-.info-panel::after { bottom: 4px; right: 4px; border-left: none; border-top: none; }
 
 .info-panel-title {
   font-family: var(--font-display);
@@ -223,7 +211,7 @@ const pageStyles = `
 }
 
 .info-panel-content {
-  font-size: 12px;
+  font-size: 1rem;
   color: var(--text-secondary);
   line-height: 1.8;
 }
@@ -250,7 +238,7 @@ const pageStyles = `
   text-align: center;
   padding: 32px;
   color: var(--text-tertiary);
-  font-size: 13px;
+  font-size: 1rem;
 }
 
 @media (max-width: 640px) {
@@ -414,7 +402,7 @@ function renderPage(data) {
 
           html += '<div class="backend-model-entry">';
           html += '<span class="backend-model-label">' + escapeHtml(backendModel) + '</span>';
-          html += '<span class="' + bLatClass + '" style="font-family:var(--font-mono);font-size:11px">' + bLatText + '</span>';
+          html += '<span class="' + bLatClass + '" style="font-family:var(--font-mono);font-size:1rem">' + bLatText + '</span>';
           html += '</div>';
         }
         html += '</div>';

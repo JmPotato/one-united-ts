@@ -4,18 +4,26 @@ import { type Config, hashConfig } from "@/types/config";
 
 const CONFIG_KEY = "config";
 
-const databasePath = Bun.env.DATABASE_PATH || "kv.db";
-const db = new Database(databasePath, { create: true });
-console.info(`Using database at: ${databasePath}`);
-db.run(
-	"CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
-);
-db.run("PRAGMA journal_mode = WAL;");
-
 let llmRouter: Router | null = null;
+let db: Database | null = null;
+
+function getDb(): Database {
+	if (db) {
+		return db;
+	}
+
+	const databasePath = Bun.env.DATABASE_PATH || "kv.db";
+	db = new Database(databasePath, { create: true });
+	console.info(`Using database at: ${databasePath}`);
+	db.run(
+		"CREATE TABLE IF NOT EXISTS kv_store (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+	);
+	db.run("PRAGMA journal_mode = WAL;");
+	return db;
+}
 
 export async function getConfig(): Promise<Config | null> {
-	const row = db
+	const row = getDb()
 		.query("SELECT value FROM kv_store WHERE key = ?")
 		.get(CONFIG_KEY) as { value: string } | null;
 	if (!row) {
@@ -30,7 +38,7 @@ export async function getConfig(): Promise<Config | null> {
 
 export async function setConfig(config: Config): Promise<void> {
 	console.info(`Setting config with hash ${await hashConfig(config)}`);
-	db.run("INSERT OR REPLACE INTO kv_store (key, value) VALUES (?, ?)", [
+	getDb().run("INSERT OR REPLACE INTO kv_store (key, value) VALUES (?, ?)", [
 		CONFIG_KEY,
 		JSON.stringify(config),
 	]);

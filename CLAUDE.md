@@ -12,6 +12,7 @@ one-united-ts is a TypeScript LLM API Gateway that routes requests to multiple L
 bun run dev          # Start dev server with watch mode (default: http://127.0.0.1:5299)
 bun start            # Run in production mode
 bun test             # Run test suite
+bun test src/app.test.ts                  # Run UI SSR route tests
 bun test src/router/router.test.ts           # Run single test file
 bun test --filter="Router constructor"       # Run tests matching pattern
 bun run typecheck    # Type check without emit
@@ -26,9 +27,10 @@ CI runs in order: `fmt:check` → `lint` → `test`. All must pass before mergin
 
 ### Core Components
 
-- **src/app.ts** - Elysia HTTP server with route definitions, authentication middleware (Bearer token via ONE_API_KEY)
+- **src/app.ts** - Elysia app factory (`createApp`) and HTTP entry point with authentication middleware (Bearer token via ONE_API_KEY)
+- **src/app.test.ts** - SSR coverage for static UI routes
 - **src/router/router.ts** - Core routing engine: provider selection, latency tracking, request forwarding, streaming support
-- **src/store.ts** - SQLite persistence layer (WAL mode), lazy-loaded router singleton
+- **src/store.ts** - Lazy-initialized SQLite persistence layer (WAL mode), router singleton
 - **src/types/** - TypeScript interfaces for OpenAI API types and gateway configuration
 - **src/views/layout.tsx** - Shared layout component: HTML shell, nav, auth widget, design system CSS/JS (@kitajs/html)
 - **src/views/dashboard.tsx** - Latency monitoring dashboard
@@ -46,7 +48,7 @@ Client → Elysia (auth) → Router (provider selection) → Upstream LLM → Re
 ### Frontend UI
 
 Server-rendered JSX pages via @kitajs/html with client-side vanilla JS. All pages share a Layout component (`src/views/layout.tsx`) that provides:
-- Dark theme design system (CSS variables)
+- Shared design system (CSS variables)
 - Sticky header with navigation and auth widget
 - Shared auth logic (localStorage API key, `apiFetch()`, `onAuthenticated()` callback pattern)
 
@@ -139,6 +141,7 @@ Use typed `error: unknown` in catch blocks, return JSON error responses.
 
 - Test files: `*.test.ts` colocated next to source files
 - Use `bun:test` (`describe`, `expect`, `test`) with descriptive names
+- Keep SSR route tests focused on stable page markers rather than theme-specific implementation details
 
 ### Comments
 
